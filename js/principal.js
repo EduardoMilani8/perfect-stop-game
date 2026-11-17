@@ -89,7 +89,7 @@ function largar() {
 
 function atualizarBotoes() {
   $("largar").disabled = est.rodando;
-  $("largar").textContent = est.fim ? "De novo" : "Largar";
+  $("largar-texto").textContent = est.fim ? "De novo" : "Largar";
 }
 
 $("fases").innerHTML = FASES.map((f, i) =>
@@ -98,7 +98,7 @@ $("fases").querySelectorAll("button").forEach((b, i) => b.addEventListener("clic
 $("largar").addEventListener("click", largar);
 $("reiniciar").addEventListener("click", reiniciar);
 
-/* ---------- Freio: botão segurado, espaço ou seta para baixo ---------- */
+/* ---------- Freio (botão, espaço ou seta para baixo) e atalhos: Enter largar, R reiniciar ---------- */
 
 const botaoFreio = $("freio");
 botaoFreio.addEventListener("pointerdown", e => {
@@ -110,7 +110,10 @@ botaoFreio.addEventListener("pointerdown", e => {
 
 document.addEventListener("keydown", e => {
   if (e.code === "Space" || e.code === "ArrowDown") { e.preventDefault(); segurando = true; }
-  if (e.code === "Enter" && document.activeElement?.tagName !== "BUTTON") largar();
+  // Enter: largar / de novo (menos quando o foco está num botão de fase, para escolher a fase)
+  if (e.code === "Enter" && !e.repeat && !document.activeElement?.closest("#fases")) { e.preventDefault(); largar(); }
+  // R: reiniciar (Ctrl+R / Cmd+R continuam recarregando a página)
+  if (e.code === "KeyR" && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) reiniciar();
 });
 document.addEventListener("keyup", e => {
   if (e.code === "Space" || e.code === "ArrowDown") { e.preventDefault(); segurando = false; }

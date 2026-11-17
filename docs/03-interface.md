@@ -28,7 +28,7 @@ botões. **Só modo claro.** Resumo do que existe:
 
 ## Comandos
 - **Largar** (vira "De novo" no fim), **Freio** (botão grande que enche de vermelho conforme o
-  pedal), **Reiniciar**.
+  pedal), **Reiniciar**. Cada botão mostra a sua tecla: **enter**, **espaço** e **R**.
 
 ## Painel de telemetria (ao lado da pista)
 - Velocidade grande em km/h.

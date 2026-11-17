@@ -5,7 +5,7 @@ Todos os valores abaixo são os do protótipo (`prototipo/index.html`). Não mud
 ## Regras
 
 1. O carro parte de `s = 0` com a velocidade inicial da fase.
-2. **Largar** (botão ou Enter) inicia a corrida.
+2. **Largar** (botão ou Enter) inicia a corrida. **Reiniciar** (botão ou R) volta à largada.
 3. **Freio** (botão segurado, ou tecla espaço / seta para baixo): enquanto segura, o pedal
    `p(t)` sobe de 0 a 1 em 0,4 s; ao soltar, volta a 0 em 0,2 s.
 4. O carro para quando `v` chega a 0. A **frente do carro** é a posição `s`.

@@ -13,9 +13,10 @@ a aceleração.
 
 ## Como jogar
 
-- **Largar**: o carro sai em velocidade.
+- **Largar** (botão ou tecla **Enter**): o carro sai em velocidade. No fim, Enter joga de novo.
 - **Freio** (botão na tela ou tecla **espaço**): segure para frear. Quanto mais tempo segura,
   mais forte o freio fica.
+- **Reiniciar** (botão ou tecla **R**): volta o carro para a largada.
 - Pare na faixa: ★★★ até 25 cm, ★★ até 1 m, ★ até 2,5 m.
 - Depois da freada, passe o mouse nos gráficos para ver qualquer instante.
 

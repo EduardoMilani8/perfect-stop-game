@@ -108,7 +108,9 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: c
 #freio span { position: relative; }
 @media (max-width: 600px) { #freio { order: 3; flex-basis: 100%; } }
 #freio.ativo { color: #fff; }
-#freio kbd { font-family: var(--font-mono); font-size: .8rem; font-weight: 500; opacity: .8; margin-left: 8px; letter-spacing: 0; }
+/* tecla de atalho mostrada dentro dos botões */
+#freio kbd, .btn kbd { font-family: var(--font-mono); font-size: .8rem; font-weight: 500; opacity: .8; margin-left: 8px; letter-spacing: 0; text-transform: none; }
+.btn kbd { font-size: .72rem; opacity: .6; }
 
 /* ---------- Painel de telemetria ---------- */
 .painel { background: var(--panel); border: 1.5px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; box-shadow: var(--sombra); }
