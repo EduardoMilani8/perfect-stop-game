@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Parada Perfeita</title>
+<!-- Fontes do Google: se estiver offline, o CSS usa as fontes de reserva -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="marca">
+      <div class="semaforo" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div>
+        <h1>Parada Perfeita</h1>
+        <p class="sub">Freie o carro e pare exatamente na faixa.</p>
+      </div>
+    </div>
+    <nav class="fases" id="fases" aria-label="Fases"></nav>
+  </header>
+
+  <main class="grade">
+    <section class="pista">
+      <div class="topo">
+        <p class="missao" id="missao"></p>
+        <p class="veredito" id="veredito" hidden></p>
+      </div>
+      <div class="cena"><canvas id="cena" aria-label="Pista vista de lado, com o carro e a faixa de parada"></canvas></div>
+      <div class="comandos">
+        <button type="button" class="btn" id="largar">Largar</button>
+        <button type="button" id="freio" aria-label="Freio: segure para frear"><span>Freio<kbd>espaço</kbd></span></button>
+        <button type="button" class="btn" id="reiniciar">Reiniciar</button>
+      </div>
+    </section>
+
+    <aside class="painel" aria-label="Telemetria">
+      <div>
+        <p class="rotulo">Velocidade</p>
+        <div class="grande"><b id="kmh">0</b><span>km/h</span></div>
+      </div>
+      <p class="faixa">Faixa a <b id="falta">—</b> m</p>
+      <dl class="tele">
+        <dt>t</dt><dd id="t-t">—</dd>
+        <dt>s(t)</dt><dd id="t-s">—</dd>
+        <dt>v = s′(t)</dt><dd id="t-v">—</dd>
+        <dt>a = v′(t)</dt><dd id="t-a">—</dd>
+        <dt>freio</dt><dd id="t-p">—</dd>
+      </dl>
+      <div class="pedal" aria-hidden="true"><i id="pedal"></i></div>
+      <p id="instante">ao vivo</p>
+    </aside>
+  </main>
+
+  <section class="graficos" id="graficos" aria-label="Gráficos no tempo">
+    <div class="graf"><h3>Posição <span>s(t) · m</span></h3><canvas id="g-s"></canvas><p id="l-s"></p></div>
+    <div class="graf"><h3>Velocidade <span>v(t) = s′(t) · m/s</span></h3><canvas id="g-v"></canvas><p id="l-v"></p></div>
+    <div class="graf"><h3>Aceleração <span>a(t) = v′(t) · m/s²</span></h3><canvas id="g-a"></canvas><p id="l-a"></p></div>
+  </section>
+</div>
+
+<!-- A ordem importa: cada arquivo usa o que os anteriores definiram -->
+<script src="js/fisica.js"></script>
+<script src="js/fases.js"></script>
+<script src="js/desenho.js"></script>
+<script src="js/principal.js"></script>
+</body>
+</html>
