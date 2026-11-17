@@ -1,23 +1,29 @@
 # 03 — Interface
 
 Visual baseado no protótipo (`prototipo/index.html`), com um polimento depois da Etapa 2:
-menos informação na tela, cena mais caprichada e acabamento dos botões. Resumo do que existe:
+menos informação na tela, cena mais caprichada, um cenário para cada fase e acabamento dos
+botões. **Só modo claro.** Resumo do que existe:
 
 ## Topo
 - Nome "Parada Perfeita" com um semáforo, e uma frase: "Freie o carro e pare exatamente na faixa."
-- Três botões de fase com velocidade inicial e distância da faixa.
+- Três botões de fase com velocidade inicial e distância da faixa, cada um com um ponto na cor
+  do seu cenário.
 
 ## Pista (o maior elemento da tela)
 - Missão em destaque ("Pare na faixa a X m") com a dica da fase em letra menor.
-- Pista vista de lado, com céu em degradê, prédios e morros ao fundo.
-- Marcas discretas a cada 10 m, faixa de parada zebrada e semáforo vermelho com brilho,
-  que **fica verde** quando o carro para com estrelas.
+- Pista vista de lado, de borda a borda, com meio-fio. O carro cabe inteiro na largada.
+- Cada fase tem seu cenário (tabela `CENARIOS` em `js/desenho.js`):
+  - **1 · Asfalto seco**: dia de sol na cidade;
+  - **2 · Pista molhada**: chuva animada, céu fechado, asfalto escuro com poças;
+  - **3 · Ladeira**: fim de tarde no interior, com morros altos e árvores.
+- Marcas discretas a cada 10 m (rótulo a cada 20 m em telas estreitas), faixa de parada
+  zebrada e semáforo vermelho com brilho, que **fica verde** quando o carro para com estrelas.
 - Carro azul com farol e sombra; as **rodas giram** o ângulo θ = s/r.
 - Ao frear: a **luz de freio acende**, a carroceria **abaixa o nariz** (proporcional à
   desaceleração) e ficam **marcas de pneu** onde o freio passou de 80%.
-- Velocidade em km/h acima do carro.
-- Ao parar: o erro em metros abaixo da pista e o resultado (estrelas) acima, com uma
-  animação curta.
+- Velocidade em km/h numa etiqueta acima do carro.
+- Ao parar: o erro como uma cota com setas entre a frente do carro e a faixa, com o valor
+  numa etiqueta, e o resultado (estrelas) acima da pista, com uma animação curta.
 - Na fase 3, a pista acompanha a função h(s) e o carro inclina junto.
 
 ## Comandos
