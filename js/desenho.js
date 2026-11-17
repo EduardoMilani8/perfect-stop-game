@@ -43,16 +43,20 @@ function ret(ctx, x, y, w, h, r) {
 
 function desenharCena() {
   const { ctx, w, h } = prep($("cena"));
-  const S0 = -6, S1 = fase.D + LIMITE_AVANCO;           // trecho visível da pista (m)
-  const k = (w - 20) / (S1 - S0);                       // pixels por metro
+  // Escala: s = 0 fica a uma distância da borda que cabe o carro inteiro na largada
+  const S1 = fase.D + LIMITE_AVANCO;                    // fim do trecho visível (m)
+  const Lp = Math.min(150, Math.max(84, w * 0.12));     // comprimento do carro (px), só visual
+  const x0 = Lp + 16;                                   // posição de s = 0 na tela (px)
+  const k = (w - x0 - 10) / S1;                         // pixels por metro
+  const S0 = -x0 / k;                                   // começo do trecho visível (m)
   let hMin = 0;
   for (let s = S0; s <= S1; s += 0.5) hMin = Math.min(hMin, fase.h(s));
   const base = Math.min(h * 0.74 + hMin * k * 0.5, h - 46 + hMin * k);
-  const X = s => 10 + (s - S0) * k, Y = s => base - fase.h(s) * k;   // metros → pixels
+  const X = s => (s - S0) * k, Y = s => base - fase.h(s) * k;        // metros → pixels
   const mono = cor("--font-mono");
 
   desenharFundo(ctx, w, h, base);
-  desenharPista(ctx, w, h, X, Y, S0, S1);
+  desenharPista(ctx, w, h, X, Y, S0 - 1, S0 + w / k + 1);   // de borda a borda
 
   // marcas de distância a cada 10 m
   ctx.save(); ctx.globalAlpha = 0.55;
@@ -75,7 +79,6 @@ function desenharCena() {
   desenharSemaforo(ctx, xf + 14, yf, resultado && resultado.ok);
 
   // carro
-  const Lp = Math.max(4.2 * k, 84);                     // comprimento do carro (px)
   desenharMarcasDePneu(ctx, X, Y, Lp / k);
   const topo = desenharCarro(ctx, X, Y, k, Lp);
 
@@ -117,14 +120,14 @@ function desenharFundo(ctx, w, h, base) {
   ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
 }
 
-// Chão e asfalto acompanhando h(s)
-function desenharPista(ctx, w, h, X, Y, S0, S1) {
+// Chão e asfalto acompanhando h(s), de sIni a sFim (metros)
+function desenharPista(ctx, w, h, X, Y, sIni, sFim) {
   const caminho = desloc => {
     ctx.beginPath();
-    for (let s = S0; s <= S1 + 1; s += 0.5) { const x = X(s), y = Y(s) + desloc; s === S0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+    for (let s = sIni; s <= sFim; s += 0.5) { const x = X(s), y = Y(s) + desloc; s === sIni ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
   };
   ctx.fillStyle = cor("--ground"); ctx.beginPath(); ctx.moveTo(0, h);
-  for (let s = S0; s <= S1 + 1; s += 0.5) ctx.lineTo(X(s), Y(s) + 10);
+  for (let s = sIni; s <= sFim; s += 0.5) ctx.lineTo(X(s), Y(s) + 10);
   ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
 
   ctx.lineJoin = "round"; ctx.lineCap = "butt";
