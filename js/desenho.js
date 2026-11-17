@@ -93,9 +93,15 @@ function desenharCena() {
   ctx.fillText(`${fase.D} m`, xf, yf + 25);
   desenharSemaforo(ctx, xf + 14, yf, resultado && resultado.ok);
 
-  // carro
+  // carro (e, se estiver comparando, o carro fantasma da jogada anterior)
   desenharMarcasDePneu(ctx, X, Y, Lp / k);
-  const topo = desenharCarro(ctx, X, Y, k, Lp);
+  if (referencia) {
+    const r = amostraNoInstante(referencia.hist, est.t);
+    ctx.save(); ctx.globalAlpha = 0.35;
+    desenharCarro(ctx, X, Y, k, Lp, { s: r.s, p: r.p, a: r.a, rodando: true });
+    ctx.restore();
+  }
+  const topo = desenharCarro(ctx, X, Y, k, Lp, est);
 
   // velocidade acima do carro
   if (cen.chuva) desenharChuva(ctx, w, h, tempo);
@@ -287,10 +293,17 @@ function desenharMarcasDePneu(ctx, X, Y, L) {
   ctx.stroke(); ctx.lineCap = "butt";
 }
 
+// amostra de um histórico no instante t (a última com tempo ≤ t)
+function amostraNoInstante(hist, t) {
+  let i = 0;
+  while (i < hist.length - 1 && hist[i + 1].t <= t) i++;
+  return hist[i];
+}
+
 // Carro de lado. A frente do carro é a posição s; ele inclina junto com a pista.
-// Devolve o ponto acima do teto, onde vai o texto da velocidade.
-function desenharCarro(ctx, X, Y, k, Lp) {
-  const L = Lp / k, sc = est.s;
+// carro = { s, p, a, rodando }. Devolve o ponto acima do teto, onde vai o texto da velocidade.
+function desenharCarro(ctx, X, Y, k, Lp, carro) {
+  const L = Lp / k, sc = carro.s;
   const ang = Math.atan(inclinacaoDaPista(fase.h, sc - L / 2));
   const cx = X(sc - L / 2), cy = Y(sc - L / 2) - 2;
   const H = Lp * 0.24, chao = -4;                       // altura da carroceria e linha das rodas
@@ -302,7 +315,7 @@ function desenharCarro(ctx, X, Y, k, Lp) {
   ctx.beginPath(); ctx.ellipse(0, chao + raio - 1, Lp * 0.52, 3, 0, 0, Math.PI * 2); ctx.fill();
 
   // ao frear, a carroceria "mergulha" o nariz, proporcional à desaceleração (só visual)
-  const mergulho = est.rodando ? Math.min(0.07, Math.max(0, (-est.a - 1) * 0.009)) : 0;
+  const mergulho = carro.rodando ? Math.min(0.07, Math.max(0, (-carro.a - 1) * 0.009)) : 0;
   ctx.save(); ctx.translate(0, chao); ctx.rotate(mergulho); ctx.translate(0, -chao);
 
   // carroceria com degradê
@@ -336,7 +349,7 @@ function desenharCarro(ctx, X, Y, k, Lp) {
   ctx.beginPath(); ctx.moveTo(-0.03 * Lp, chao - H); ctx.lineTo(-0.03 * Lp, chao - 0.2 * H); ctx.stroke();
 
   // luz de freio: acende com o pedal
-  const luz = est.rodando ? est.p : 0;
+  const luz = carro.rodando ? carro.p : 0;
   ctx.fillStyle = luz > 0.05 ? "#ff2a35" : "#7a2a2e";
   ctx.fillRect(-0.5 * Lp - 1, chao - 0.85 * H, 4, H * 0.3);
   if (luz > 0.05) {
@@ -373,9 +386,10 @@ function desenharCarro(ctx, X, Y, k, Lp) {
 function grafico(id, chave, opt) {
   const { ctx, w, h } = prep($(id));
   ctx.clearRect(0, 0, w, h);
-  const dados = est.hist;
-  const tMax = Math.max(4, dados[dados.length - 1].t * 1.05);
-  const vals = dados.map(p => p[chave]).concat(opt.ref != null ? [opt.ref] : [], 0);
+  const dados = est.hist, ant = referencia ? referencia.hist : null;
+  const tFim = Math.max(dados[dados.length - 1].t, ant ? ant[ant.length - 1].t : 0);
+  const tMax = Math.max(4, tFim * 1.05);
+  const vals = dados.map(p => p[chave]).concat(ant ? ant.map(p => p[chave]) : [], opt.ref != null ? [opt.ref] : [], 0);
   let lo = Math.min(...vals), hi = Math.max(...vals);
   if (hi - lo < 1e-6) { lo -= 1; hi += 1; }
   const pad = (hi - lo) * 0.12; lo -= pad; hi += pad;
@@ -394,6 +408,12 @@ function grafico(id, chave, opt) {
   if (lo < 0 && hi > 0) { ctx.strokeStyle = cor("--muted"); ctx.beginPath(); ctx.moveTo(P.l, Y(0)); ctx.lineTo(w - P.r, Y(0)); ctx.stroke(); }
   if (opt.ref != null) {
     ctx.strokeStyle = cor("--signal"); ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(P.l, Y(opt.ref)); ctx.lineTo(w - P.r, Y(opt.ref)); ctx.stroke(); ctx.setLineDash([]);
+  }
+  // curva da jogada anterior (comparação), tracejada
+  if (ant) {
+    ctx.strokeStyle = cor("--muted"); ctx.lineWidth = 1.6; ctx.setLineDash([5, 4]); ctx.beginPath();
+    ant.forEach((p, i) => i ? ctx.lineTo(X(p.t), Y(p[chave])) : ctx.moveTo(X(p.t), Y(p[chave]))); ctx.stroke();
+    ctx.setLineDash([]);
   }
   // curva
   ctx.fillStyle = cor("--accent"); ctx.globalAlpha = 0.1; ctx.beginPath(); ctx.moveTo(X(0), Y(Math.max(lo, Math.min(0, hi))));
@@ -447,15 +467,14 @@ function desenharDestaques(ctx, d, X, Y, P, w, h) {
 function indiceAtual() {
   const d = est.hist;
   if (inspecao == null) return d.length - 1;
-  let i = 0; while (i < d.length - 1 && d[i + 1].t <= inspecao) i++;
-  return i;
+  return d.indexOf(amostraNoInstante(d, inspecao));
 }
 
 // Depois da jogada, marca nos gráficos o que o relatório aponta
 function destaquesDoRelatorio() {
   if (!relatorio || est.rodando) return null;
   const r = relatorio;
-  const freio = r.freio ? [{ t: r.freio.t, rotulo: "freio" }] : [];
+  const freio = r.freio ? [{ t: r.freio.t, rotulo: "freio" }] : [];   // instante em que o pedal começou a descer
   const v = { verticais: freio, pontos: [{ t: r.tVMax, y: r.vMax, rotulo: "máx" }] };
   if (r.tValorMedio != null) {
     v.horizontais = [{ y: r.vMedia }];

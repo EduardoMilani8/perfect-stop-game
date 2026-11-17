@@ -13,10 +13,11 @@ function montarRelatorio(hist, fase, resultado) {
   const fim = hist[hist.length - 1];
   const r = { fase, tTotal: fim.t, sTotal: fim.s, erro: resultado.erro, avancou: resultado.avancou };
 
-  // freada: do primeiro instante com o pedal apertado até o fim
+  // freada: do instante em que o pedal começou a descer até o fim
+  // (a primeira amostra com pedal > 0 é o fim do quadro em que ele começou; a anterior é o início)
   const iFreio = hist.findIndex(p => p.p > 0);
   if (iFreio >= 0) {
-    const ini = hist[iFreio];
+    const ini = hist[Math.max(0, iFreio - 1)];
     r.freio = {
       t: ini.t, falta: fase.D - ini.s, v: ini.v,
       duracao: fim.t - ini.t, distancia: fim.s - ini.s,
@@ -119,6 +120,7 @@ function mostrarRelatorio(r, anterior) {
   const linhas = linhasDoRelatorio(r);
   const antes = anterior ? linhasDoRelatorio(anterior) : null;
   const grupos = [...new Set(linhas.map(l => l.grupo))];
+  $("relatorio-corpo").classList.toggle("comparando", !!antes);   // comparando: um grupo por linha
 
   $("relatorio-corpo").innerHTML = grupos.map(g => {
     const doGrupo = linhas.filter(l => l.grupo === g);
@@ -129,8 +131,13 @@ function mostrarRelatorio(r, anterior) {
       let extra = "";
       if (antes) {
         const dif = a && l.num != null && a.num != null ? l.num - a.num : null;
-        extra = `<td class="ant">${a ? a.texto : "—"}</td>` +
-                `<td class="dif">${dif == null ? "" : `${dif > 0 ? "+" : dif < 0 ? "−" : ""}${fmt(Math.abs(dif))} ${l.unidade}`}</td>`;
+        let txtDif = "";
+        if (dif != null) {
+          const n = fmt(Math.abs(dif));
+          const sinal = n === fmt(0) ? "" : dif > 0 ? "+" : "−";   // sem sinal quando arredonda para zero
+          txtDif = `${sinal}${n} ${l.unidade}`;
+        }
+        extra = `<td class="ant">${a ? a.texto : "—"}</td><td class="dif">${txtDif}</td>`;
       }
       return `<tr><th scope="row">${l.rotulo}${nota}</th><td>${l.texto}</td>${extra}</tr>`;
     }).join("");

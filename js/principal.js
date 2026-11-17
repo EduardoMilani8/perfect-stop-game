@@ -17,6 +17,11 @@ let inspecao = null;     // instante escolhido com o mouse nos gráficos (ou nul
 let resultado = null;    // { ok, avancou, txt, erro } depois que o carro para
 let relatorio = null;    // números da jogada que acabou (relatorio.js)
 
+// Comparação com a jogada anterior
+let comparar = false;      // a caixa "comparar a próxima jogada com esta" está marcada?
+let ultimaJogada = null;   // { indiceFase, hist, relatorio } da última jogada terminada
+let referencia = null;     // jogada anterior que a atual está comparando (ou null)
+
 function novoEstado() {
   const a0 = aceleracao(0, fase.v0, 0, fase);
   return {
@@ -60,7 +65,8 @@ function terminar(avancou) {
   }
   resultado.erro = erro;
   relatorio = montarRelatorio(est.hist, fase, resultado);
-  mostrarVeredito(); atualizarBotoes(); mostrarRelatorio(relatorio, null);
+  mostrarVeredito(); atualizarBotoes(); mostrarRelatorio(relatorio, referencia && referencia.relatorio);
+  ultimaJogada = { indiceFase, hist: est.hist, relatorio };
 }
 
 function mostrarVeredito() {
@@ -79,13 +85,15 @@ function escolherFase(i) {
 }
 
 function reiniciar() {
-  est = novoEstado(); resultado = null; relatorio = null; inspecao = null;
+  est = novoEstado(); resultado = null; relatorio = null; inspecao = null; referencia = null;
   mostrarVeredito(); atualizarBotoes(); mostrarRelatorio(null, null);
 }
 
 function largar() {
   if (est.rodando) return;
   if (est.fim) reiniciar();
+  // compara só com uma jogada da mesma fase
+  referencia = comparar && ultimaJogada && ultimaJogada.indiceFase === indiceFase ? ultimaJogada : null;
   est.rodando = true; inspecao = null; atualizarBotoes();
 }
 
@@ -99,6 +107,7 @@ $("fases").innerHTML = FASES.map((f, i) =>
 $("fases").querySelectorAll("button").forEach((b, i) => b.addEventListener("click", () => escolherFase(i)));
 $("largar").addEventListener("click", largar);
 $("reiniciar").addEventListener("click", reiniciar);
+$("comparar").addEventListener("change", e => { comparar = e.target.checked; });
 
 /* ---------- Freio (botão, espaço ou seta para baixo) e atalhos: Enter largar, R reiniciar ---------- */
 

@@ -141,6 +141,13 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: c
 .relatorio-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 10px; }
 .relatorio h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; text-transform: uppercase; letter-spacing: .03em; }
 .relatorio-corpo { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px 22px; }
+.relatorio-corpo.comparando { grid-template-columns: minmax(0, 1fr); }
+.relatorio-corpo.comparando table { table-layout: fixed; }
+.relatorio-corpo.comparando tr:first-child th:not(:first-child) { width: 11em; }
+.relatorio-corpo.comparando td { white-space: normal; }
+.relatorio-corpo.comparando td:first-of-type { color: var(--ink); font-weight: 600; }
+.comparar { display: flex; align-items: center; gap: 8px; font-size: .95rem; cursor: pointer; user-select: none; }
+.comparar input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
 .rel-grupo h3 { margin: 0 0 6px; font-family: var(--font-display); font-weight: 600; font-size: .95rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
 .rel-grupo table { width: 100%; border-collapse: collapse; font-size: .92rem; }
 .rel-grupo th, .rel-grupo td { padding: 5px 0; vertical-align: top; text-align: left; }
