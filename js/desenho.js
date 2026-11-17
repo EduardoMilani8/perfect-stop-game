@@ -75,10 +75,11 @@ function desenharCena() {
   // marcas de distância a cada 10 m
   ctx.save(); ctx.globalAlpha = 0.55;
   ctx.fillStyle = cor("--muted"); ctx.font = `10px ${mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+  const passoRotulo = 10 * k < 44 ? 20 : 10;           // tela estreita: rótulo a cada 20 m
   for (let s = 0; s <= S1; s += 10) {
     if (Math.abs(X(s) - X(fase.D)) < 30) continue;   // não encosta no rótulo da faixa
     ctx.fillRect(X(s) - 0.5, Y(s) + 19, 1, 4);
-    ctx.fillText(`${s} m`, X(s), Y(s) + 25);
+    if (s % passoRotulo === 0) ctx.fillText(`${s} m`, X(s), Y(s) + 25);
   }
   ctx.restore();
 
