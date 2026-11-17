@@ -401,6 +401,8 @@ function grafico(id, chave, opt) {
   ctx.globalAlpha = 1; ctx.strokeStyle = cor("--accent"); ctx.lineWidth = 2.2; ctx.lineJoin = "round"; ctx.beginPath();
   dados.forEach((p, i) => i ? ctx.lineTo(X(p.t), Y(p[chave])) : ctx.moveTo(X(p.t), Y(p[chave]))); ctx.stroke();
 
+  if (opt.destaques) desenharDestaques(ctx, opt.destaques, X, Y, P, w, h);
+
   // instante mostrado (ao vivo ou inspecionado com o mouse)
   const p = dados[indiceAtual()];
   if (inspecao != null) { ctx.strokeStyle = cor("--muted"); ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(X(p.t), P.t); ctx.lineTo(X(p.t), h - P.b); ctx.stroke(); ctx.setLineDash([]); }
@@ -419,6 +421,28 @@ function grafico(id, chave, opt) {
   return { P, tMax, w };
 }
 
+// Destaques do relatório: linhas verticais (instantes), horizontais (valores) e pontos marcados
+function desenharDestaques(ctx, d, X, Y, P, w, h) {
+  const roxo = cor("--destaque"), mono = cor("--font-mono");   // cor das marcas
+  ctx.save();
+  ctx.strokeStyle = roxo; ctx.fillStyle = roxo; ctx.lineWidth = 1.2; ctx.font = `600 10px ${mono}`;
+  ctx.setLineDash([4, 3]);
+  (d.verticais || []).forEach(({ t, rotulo }) => {
+    ctx.beginPath(); ctx.moveTo(X(t), P.t); ctx.lineTo(X(t), h - P.b); ctx.stroke();
+    ctx.textAlign = "left"; ctx.textBaseline = "bottom"; ctx.fillText(rotulo, X(t) + 3, h - P.b - 2);
+  });
+  (d.horizontais || []).forEach(({ y }) => {
+    ctx.beginPath(); ctx.moveTo(P.l, Y(y)); ctx.lineTo(w - P.r, Y(y)); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  (d.pontos || []).forEach(({ t, y, rotulo, embaixo }) => {
+    ctx.beginPath(); ctx.arc(X(t), Y(y), 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.textAlign = "center"; ctx.textBaseline = embaixo ? "top" : "bottom";
+    ctx.fillText(rotulo, X(t), Y(y) + (embaixo ? 5 : -5));
+  });
+  ctx.restore();
+}
+
 // índice do histórico mostrado: o último (ao vivo) ou o do instante inspecionado
 function indiceAtual() {
   const d = est.hist;
@@ -427,14 +451,30 @@ function indiceAtual() {
   return i;
 }
 
+// Depois da jogada, marca nos gráficos o que o relatório aponta
+function destaquesDoRelatorio() {
+  if (!relatorio || est.rodando) return null;
+  const r = relatorio;
+  const freio = r.freio ? [{ t: r.freio.t, rotulo: "freio" }] : [];
+  const v = { verticais: freio, pontos: [{ t: r.tVMax, y: r.vMax, rotulo: "máx" }] };
+  if (r.tValorMedio != null) {
+    v.horizontais = [{ y: r.vMedia }];
+    v.pontos.push({ t: r.tValorMedio, y: r.vMedia, rotulo: "média", embaixo: true });
+  }
+  const a = { verticais: freio, pontos: [] };
+  if (r.tPontoCritico != null) a.pontos.push({ t: r.tPontoCritico, y: 0, rotulo: "zero", embaixo: true });
+  return { s: { verticais: freio }, v, a };
+}
+
 /* ---------- Tudo de uma vez, a cada quadro ---------- */
 
 let geo = null;   // geometria do gráfico, usada para converter o mouse em tempo
 function desenhar() {
   desenharCena();
-  geo = grafico("g-s", "s", { ref: fase.D, inclinacao: "vD" });
-  grafico("g-v", "v", { inclinacao: "aD" });
-  grafico("g-a", "a", {});
+  const d = destaquesDoRelatorio();
+  geo = grafico("g-s", "s", { ref: fase.D, inclinacao: "vD", destaques: d && d.s });
+  grafico("g-v", "v", { inclinacao: "aD", destaques: d && d.v });
+  grafico("g-a", "a", { destaques: d && d.a });
   const p = est.hist[indiceAtual()];
   // telemetria
   $("kmh").textContent = kmh(p.v);
