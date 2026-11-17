@@ -15,6 +15,7 @@ let est = null;          // { t, s, v, a, p, rodando, fim, hist }
 let segurando = false;   // o jogador está segurando o freio?
 let inspecao = null;     // instante escolhido com o mouse nos gráficos (ou null = ao vivo)
 let resultado = null;    // { ok, avancou, txt, erro } depois que o carro para
+let relatorio = null;    // números da jogada que acabou (relatorio.js)
 
 function novoEstado() {
   const a0 = aceleracao(0, fase.v0, 0, fase);
@@ -58,7 +59,8 @@ function terminar(avancou) {
       : { ok: false, avancou: false, txt: `Errou: ${onde}` };
   }
   resultado.erro = erro;
-  mostrarVeredito(); atualizarBotoes();
+  relatorio = montarRelatorio(est.hist, fase, resultado);
+  mostrarVeredito(); atualizarBotoes(); mostrarRelatorio(relatorio, null);
 }
 
 function mostrarVeredito() {
@@ -77,8 +79,8 @@ function escolherFase(i) {
 }
 
 function reiniciar() {
-  est = novoEstado(); resultado = null; inspecao = null;
-  mostrarVeredito(); atualizarBotoes();
+  est = novoEstado(); resultado = null; relatorio = null; inspecao = null;
+  mostrarVeredito(); atualizarBotoes(); mostrarRelatorio(null, null);
 }
 
 function largar() {

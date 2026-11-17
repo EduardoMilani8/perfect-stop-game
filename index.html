@@ -60,12 +60,20 @@
     <div class="graf"><h3>Velocidade <span>v(t) = s′(t) · m/s</span></h3><canvas id="g-v"></canvas></div>
     <div class="graf"><h3>Aceleração <span>a(t) = v′(t) · m/s²</span></h3><canvas id="g-a"></canvas></div>
   </section>
+
+  <section class="relatorio" id="relatorio" aria-label="Relatório da jogada" hidden>
+    <div class="relatorio-topo">
+      <h2>Relatório da jogada</h2>
+    </div>
+    <div class="relatorio-corpo" id="relatorio-corpo"></div>
+  </section>
 </div>
 
 <!-- A ordem importa: cada arquivo usa o que os anteriores definiram -->
 <script src="js/fisica.js"></script>
 <script src="js/fases.js"></script>
 <script src="js/desenho.js"></script>
+<script src="js/relatorio.js"></script>
 <script src="js/principal.js"></script>
 </body>
 </html>
