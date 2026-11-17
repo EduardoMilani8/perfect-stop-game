@@ -58,7 +58,7 @@ function desenharCena() {
   ctx.save(); ctx.globalAlpha = 0.55;
   ctx.fillStyle = cor("--muted"); ctx.font = `10px ${mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
   for (let s = 0; s <= S1; s += 10) {
-    if (Math.abs(s - fase.D) < 4) continue;
+    if (Math.abs(X(s) - X(fase.D)) < 30) continue;   // não encosta no rótulo da faixa
     ctx.fillRect(X(s) - 0.5, Y(s) + 13, 1, 4);
     ctx.fillText(`${s} m`, X(s), Y(s) + 19);
   }
