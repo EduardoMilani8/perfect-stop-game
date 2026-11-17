@@ -19,6 +19,9 @@ a aceleração.
 - **Reiniciar** (botão ou tecla **R**): volta o carro para a largada.
 - Pare na faixa: ★★★ até 25 cm, ★★ até 1 m, ★ até 2,5 m.
 - Depois da freada, passe o mouse nos gráficos para ver qualquer instante.
+- No fim aparece o **relatório da jogada** (freada, velocidade e aceleração e conceitos de
+  Cálculo). Marque **"Comparar a próxima jogada com esta"** para ver a jogada seguinte ao lado
+  da anterior (carro fantasma, curva cinza nos gráficos e colunas de diferença).
 
 ## Rodando
 
