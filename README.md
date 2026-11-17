@@ -31,6 +31,4 @@ Testes da física: `node tests/fisica.test.js`
 
 ## Grupo
 
-- _nome 1_
-- _nome 2_
-- _..._
+- Eduardo Milani
