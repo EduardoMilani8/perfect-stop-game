@@ -49,21 +49,11 @@ function desenharCena() {
   for (let s = S0; s <= S1; s += 0.5) hMin = Math.min(hMin, fase.h(s));
   const base = Math.min(h * 0.74 + hMin * k * 0.5, h - 46 + hMin * k);
   const X = s => 10 + (s - S0) * k, Y = s => base - fase.h(s) * k;   // metros → pixels
-  const mono = cor("--font-mono"), disp = cor("--font-display");
+  const mono = cor("--font-mono");
 
-  ctx.fillStyle = cor("--sky"); ctx.fillRect(0, 0, w, h);
-  // chão
-  ctx.fillStyle = cor("--ground"); ctx.beginPath(); ctx.moveTo(0, h);
-  for (let s = S0; s <= S1 + 1; s += 0.5) ctx.lineTo(X(s), Y(s) + 10);
-  ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
-  // pista (acompanha h(s))
-  ctx.lineJoin = "round"; ctx.lineCap = "butt";
-  ctx.strokeStyle = cor("--road"); ctx.lineWidth = 14; ctx.beginPath();
-  for (let s = S0; s <= S1 + 1; s += 0.5) { const x = X(s), y = Y(s) + 5; s === S0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
-  ctx.stroke();
-  ctx.strokeStyle = cor("--paint"); ctx.lineWidth = 2; ctx.setLineDash([10, 10]); ctx.beginPath();
-  for (let s = S0; s <= S1 + 1; s += 0.5) { const x = X(s), y = Y(s) + 5; s === S0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
-  ctx.stroke(); ctx.setLineDash([]);
+  desenharFundo(ctx, w, h, base);
+  desenharPista(ctx, w, h, X, Y, S0, S1);
+
   // marcas de distância a cada 10 m
   ctx.save(); ctx.globalAlpha = 0.55;
   ctx.fillStyle = cor("--muted"); ctx.font = `10px ${mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
@@ -73,51 +63,164 @@ function desenharCena() {
     ctx.fillText(`${s} m`, X(s), Y(s) + 19);
   }
   ctx.restore();
-  // faixa de parada e semáforo
-  const xf = X(fase.D), yf = Y(fase.D);
-  ctx.fillStyle = "#ffffff"; ctx.fillRect(xf - 2, yf - 2, 4, 14);
-  ctx.fillStyle = cor("--ink"); ctx.font = `600 12px ${mono}`;
-  ctx.fillText(`${fase.D} m`, xf, yf + 21);
-  const xp = xf + 14;
-  ctx.fillStyle = "#2a2f36"; ctx.fillRect(xp - 2, yf - 92, 4, 92);
-  ret(ctx, xp - 11, yf - 140, 22, 54, 5); ctx.fill();
-  const luzes = ["#ff3b45", "#4a3d1c", "#1d3b2a"];
-  luzes.forEach((c, i) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(xp, yf - 128 + i * 16, 6, 0, Math.PI * 2); ctx.fill(); });
-  ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = "#ff3b45"; ctx.beginPath(); ctx.arc(xp, yf - 128, 11, 0, Math.PI * 2); ctx.fill(); ctx.restore();
 
-  // carro: a frente do carro é a posição s; inclina junto com a pista
-  const Lp = Math.max(4.2 * k, 84), L = Lp / k, sc = est.s;
-  const ang = Math.atan(inclinacaoDaPista(fase.h, sc - L / 2));
-  const cx = X(sc - L / 2), cy = Y(sc - L / 2) - 2;
-  ctx.save(); ctx.translate(cx, cy); ctx.rotate(-ang);
-  const Hp = Lp * 0.24;
-  ctx.fillStyle = "#1f5fd1"; ctx.strokeStyle = "#161b22"; ctx.lineWidth = 1.5;
-  ret(ctx, -Lp / 2, -Hp - 4, Lp, Hp, 4); ctx.fill(); ctx.stroke();
-  ret(ctx, -Lp * 0.22, -Hp * 1.75 - 4, Lp * 0.5, Hp * 0.8, 4); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = "#cfe3ff"; ret(ctx, -Lp * 0.17, -Hp * 1.65 - 4, Lp * 0.4, Hp * 0.55, 2); ctx.fill();
-  ctx.fillStyle = "#161b22";
-  [-Lp * 0.3, Lp * 0.3].forEach(x => { ctx.beginPath(); ctx.arc(x, -4, Math.max(4, Hp * 0.36), 0, Math.PI * 2); ctx.fill(); });
-  // luz de freio: acende com o pedal
-  const luz = est.rodando ? est.p : 0;
-  ctx.fillStyle = luz > 0.05 ? "#ff2a35" : "#7a2a2e";
-  ctx.fillRect(-Lp / 2 - 1, -Hp + 1, 4, Hp * 0.35);
-  if (luz > 0.05) { ctx.globalAlpha = 0.25 + 0.5 * luz; ctx.beginPath(); ctx.arc(-Lp / 2, -Hp + 3, 10, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
-  // farol
-  ctx.fillStyle = "#ffe48a"; ctx.fillRect(Lp / 2 - 3, -Hp + 1, 3, Hp * 0.3);
-  ctx.restore();
+  // faixa de parada (zebrada) e semáforo
+  const xf = X(fase.D), yf = Y(fase.D);
+  for (let i = 0; i < 4; i++) {
+    ctx.fillStyle = i % 2 ? "#2a2f36" : "#ffffff";
+    ctx.fillRect(xf - 2.5, yf - 2 + i * 3.5, 5, 3.5);
+  }
+  ctx.fillStyle = cor("--ink"); ctx.font = `600 12px ${mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+  ctx.fillText(`${fase.D} m`, xf, yf + 19);
+  desenharSemaforo(ctx, xf + 14, yf, resultado && resultado.ok);
+
+  // carro
+  const Lp = Math.max(4.2 * k, 84);                     // comprimento do carro (px)
+  const topo = desenharCarro(ctx, X, Y, k, Lp);
 
   // velocidade acima do carro
-  ctx.fillStyle = cor("--ink"); ctx.font = `700 15px ${disp}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-  ctx.fillText(`${kmh(est.v)} km/h`, cx, cy - Hp * 2 - 10);
+  ctx.fillStyle = cor("--ink"); ctx.font = `700 15px ${cor("--font-display")}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  ctx.fillText(`${kmh(est.v)} km/h`, topo.x, topo.y);
 
   // erro final, abaixo da pista
   if (resultado && !resultado.avancou) {
-    const xa = X(est.s), y0 = yf + 44;
+    const xa = X(est.s), y0 = yf + 42;
     ctx.strokeStyle = resultado.ok ? cor("--ok") : cor("--bad"); ctx.fillStyle = ctx.strokeStyle; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(xa, y0); ctx.lineTo(xf, y0); ctx.stroke();
+    [xa, xf].forEach(x => ctx.fillRect(x - 1, y0 - 4, 2, 8));
     ctx.font = `600 13px ${mono}`; ctx.textBaseline = "top";
     ctx.fillText(`${resultado.erro > 0 ? "+" : "−"}${fmt(Math.abs(resultado.erro))} m`, (xa + xf) / 2, y0 + 5);
   }
+}
+
+// Céu em degradê, prédios e morros ao fundo (fixos: só enfeite)
+const PREDIOS = [   // [x, largura, altura] em fração da tela
+  [0.03, 0.05, 0.34], [0.085, 0.035, 0.46], [0.13, 0.06, 0.28], [0.21, 0.04, 0.40],
+  [0.56, 0.05, 0.30], [0.62, 0.03, 0.50], [0.66, 0.06, 0.36], [0.80, 0.04, 0.44], [0.86, 0.07, 0.26]
+];
+function desenharFundo(ctx, w, h, base) {
+  const ceu = ctx.createLinearGradient(0, 0, 0, base);
+  ceu.addColorStop(0, cor("--sky-top")); ceu.addColorStop(1, cor("--sky"));
+  ctx.fillStyle = ceu; ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = cor("--city");
+  PREDIOS.forEach(([x, l, a]) => {
+    const alto = a * base;
+    ctx.fillRect(x * w, base - alto, l * w, alto);
+  });
+
+  ctx.fillStyle = cor("--hill"); ctx.beginPath(); ctx.moveTo(0, h);
+  for (let x = 0; x <= w; x += 8) {
+    ctx.lineTo(x, base - 26 - 16 * Math.sin(x / w * 5.3) - 8 * Math.sin(x / w * 13 + 1));
+  }
+  ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+}
+
+// Chão e asfalto acompanhando h(s)
+function desenharPista(ctx, w, h, X, Y, S0, S1) {
+  const caminho = desloc => {
+    ctx.beginPath();
+    for (let s = S0; s <= S1 + 1; s += 0.5) { const x = X(s), y = Y(s) + desloc; s === S0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+  };
+  ctx.fillStyle = cor("--ground"); ctx.beginPath(); ctx.moveTo(0, h);
+  for (let s = S0; s <= S1 + 1; s += 0.5) ctx.lineTo(X(s), Y(s) + 10);
+  ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+
+  ctx.lineJoin = "round"; ctx.lineCap = "butt";
+  ctx.strokeStyle = cor("--road"); ctx.lineWidth = 14; caminho(5); ctx.stroke();
+  ctx.strokeStyle = "rgba(255,255,255,0.18)"; ctx.lineWidth = 1.5; caminho(-1.5); ctx.stroke();   // borda iluminada
+  ctx.strokeStyle = cor("--paint"); ctx.lineWidth = 2; ctx.setLineDash([10, 10]); caminho(5); ctx.stroke(); ctx.setLineDash([]);
+}
+
+// Semáforo: vermelho; fica verde quando o carro para com estrelas
+function desenharSemaforo(ctx, xp, yf, verde) {
+  ctx.fillStyle = "#2a2f36"; ctx.fillRect(xp - 2, yf - 92, 4, 92);
+  ret(ctx, xp - 12, yf - 141, 24, 56, 6); ctx.fill();
+  const acesas = ["#ff3b45", "#ffb020", "#2ee07a"], apagadas = ["#4a1d22", "#4a3d1c", "#1d3b2a"];
+  const ligada = verde ? 2 : 0;
+  acesas.forEach((c, i) => {
+    const y = yf - 128 + i * 16;
+    if (i === ligada) {
+      const brilho = ctx.createRadialGradient(xp, y, 2, xp, y, 24);
+      brilho.addColorStop(0, c + "99"); brilho.addColorStop(1, c + "00");
+      ctx.fillStyle = brilho; ctx.beginPath(); ctx.arc(xp, y, 24, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = i === ligada ? c : apagadas[i];
+    ctx.beginPath(); ctx.arc(xp, y, 6, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+// Carro de lado. A frente do carro é a posição s; ele inclina junto com a pista.
+// Devolve o ponto acima do teto, onde vai o texto da velocidade.
+function desenharCarro(ctx, X, Y, k, Lp) {
+  const L = Lp / k, sc = est.s;
+  const ang = Math.atan(inclinacaoDaPista(fase.h, sc - L / 2));
+  const cx = X(sc - L / 2), cy = Y(sc - L / 2) - 2;
+  const H = Lp * 0.24, chao = -4;                       // altura da carroceria e linha das rodas
+  const raio = Math.max(4, H * 0.36);
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(-ang);
+
+  // sombra
+  ctx.fillStyle = "rgba(0,0,0,0.22)";
+  ctx.beginPath(); ctx.ellipse(0, chao + raio - 1, Lp * 0.52, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+  // carroceria com degradê
+  const tinta = ctx.createLinearGradient(0, chao - 1.75 * H, 0, chao);
+  tinta.addColorStop(0, "#4c8bf5"); tinta.addColorStop(0.55, "#1f5fd1"); tinta.addColorStop(1, "#1747a0");
+  ctx.fillStyle = tinta; ctx.strokeStyle = "#161b22"; ctx.lineWidth = 1.5; ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(-0.5 * Lp, chao - 0.12 * H);
+  ctx.lineTo(-0.5 * Lp, chao - 0.78 * H);
+  ctx.quadraticCurveTo(-0.5 * Lp, chao - H, -0.44 * Lp, chao - H);      // traseira
+  ctx.lineTo(-0.3 * Lp, chao - H);
+  ctx.lineTo(-0.2 * Lp, chao - 1.72 * H);                                // vidro de trás
+  ctx.quadraticCurveTo(-0.17 * Lp, chao - 1.78 * H, -0.12 * Lp, chao - 1.78 * H);
+  ctx.lineTo(0.08 * Lp, chao - 1.78 * H);                                // teto
+  ctx.quadraticCurveTo(0.12 * Lp, chao - 1.78 * H, 0.15 * Lp, chao - 1.7 * H);
+  ctx.lineTo(0.27 * Lp, chao - H);                                       // para-brisa
+  ctx.lineTo(0.43 * Lp, chao - 0.9 * H);                                 // capô
+  ctx.quadraticCurveTo(0.5 * Lp, chao - 0.86 * H, 0.5 * Lp, chao - 0.55 * H);
+  ctx.lineTo(0.5 * Lp, chao - 0.12 * H);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  // vidros
+  ctx.fillStyle = "#cfe3ff";
+  ctx.beginPath();
+  ctx.moveTo(-0.26 * Lp, chao - 1.06 * H); ctx.lineTo(-0.175 * Lp, chao - 1.64 * H);
+  ctx.lineTo(0.09 * Lp, chao - 1.64 * H); ctx.lineTo(0.21 * Lp, chao - 1.06 * H);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = "#1f5fd1"; ctx.lineWidth = 3;                         // coluna entre as janelas
+  ctx.beginPath(); ctx.moveTo(-0.03 * Lp, chao - 1.66 * H); ctx.lineTo(-0.03 * Lp, chao - 1.04 * H); ctx.stroke();
+  ctx.strokeStyle = "rgba(0,0,0,0.25)"; ctx.lineWidth = 1;                // porta
+  ctx.beginPath(); ctx.moveTo(-0.03 * Lp, chao - H); ctx.lineTo(-0.03 * Lp, chao - 0.2 * H); ctx.stroke();
+
+  // luz de freio: acende com o pedal
+  const luz = est.rodando ? est.p : 0;
+  ctx.fillStyle = luz > 0.05 ? "#ff2a35" : "#7a2a2e";
+  ctx.fillRect(-0.5 * Lp - 1, chao - 0.85 * H, 4, H * 0.3);
+  if (luz > 0.05) {
+    const brilho = ctx.createRadialGradient(-0.5 * Lp, chao - 0.7 * H, 1, -0.5 * Lp, chao - 0.7 * H, 16);
+    brilho.addColorStop(0, `rgba(255,42,53,${0.3 + 0.5 * luz})`); brilho.addColorStop(1, "rgba(255,42,53,0)");
+    ctx.fillStyle = brilho; ctx.beginPath(); ctx.arc(-0.5 * Lp, chao - 0.7 * H, 16, 0, Math.PI * 2); ctx.fill();
+  }
+  // farol
+  ctx.fillStyle = "#ffe48a"; ctx.fillRect(0.5 * Lp - 3, chao - 0.78 * H, 3, H * 0.26);
+
+  // rodas: giram o ângulo θ = s / r (rolar sem deslizar)
+  const giro = (sc * k) / raio;
+  [-0.3 * Lp, 0.3 * Lp].forEach(x => {
+    ctx.fillStyle = "#161b22"; ctx.beginPath(); ctx.arc(x, chao, raio, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#9aa4ae"; ctx.beginPath(); ctx.arc(x, chao, raio * 0.55, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#5d6773"; ctx.lineWidth = 1.5;
+    for (let i = 0; i < 5; i++) {
+      const th = giro + i * 2 * Math.PI / 5;
+      ctx.beginPath(); ctx.moveTo(x, chao); ctx.lineTo(x + Math.cos(th) * raio * 0.52, chao + Math.sin(th) * raio * 0.52); ctx.stroke();
+    }
+    ctx.fillStyle = "#161b22"; ctx.beginPath(); ctx.arc(x, chao, raio * 0.14, 0, Math.PI * 2); ctx.fill();
+  });
+
+  ctx.restore();
+  return { x: cx, y: cy - H * 2 - 10 };
 }
 
 /* ---------- Gráficos no tempo ---------- */

@@ -13,6 +13,9 @@
   --muted: #5d6773;
   --line: #d6dbe1;
   --sky: #dde9f3;
+  --sky-top: #b7d3ee;
+  --city: #c9d6e2;
+  --hill: #b7cba3;
   --ground: #c5d3b3;
   --road: #3a3f46;
   --paint: #f2c230;
@@ -28,13 +31,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #111418; --panel: #1a1e24; --ink: #e9edf1; --muted: #9aa4ae; --line: #2b3139;
-    --sky: #1a2330; --ground: #26321f; --road: #4b515a; --paint: #f5c94a; --signal: #ff4b55;
+    --sky: #1a2330; --sky-top: #0c1118; --city: #212b37; --hill: #1f2a1a; --ground: #26321f; --road: #4b515a; --paint: #f5c94a; --signal: #ff4b55;
     --accent: #7fa6ff; --ok: #3ccf8e; --bad: #ff5f68; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #111418; --panel: #1a1e24; --ink: #e9edf1; --muted: #9aa4ae; --line: #2b3139;
-  --sky: #1a2330; --ground: #26321f; --road: #4b515a; --paint: #f5c94a; --signal: #ff4b55;
+  --sky: #1a2330; --sky-top: #0c1118; --city: #212b37; --hill: #1f2a1a; --ground: #26321f; --road: #4b515a; --paint: #f5c94a; --signal: #ff4b55;
   --accent: #7fa6ff; --ok: #3ccf8e; --bad: #ff5f68; color-scheme: dark;
 }
 
