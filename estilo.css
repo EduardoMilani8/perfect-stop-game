@@ -145,6 +145,16 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: c
 .relatorio-corpo.comparando table { table-layout: fixed; }
 .relatorio-corpo.comparando tr:first-child th:not(:first-child) { width: 11em; }
 .relatorio-corpo.comparando td { white-space: normal; }
+/* celular: na comparação, o rótulo fica em cima e os três valores embaixo */
+@media (max-width: 600px) {
+  .relatorio-corpo.comparando table, .relatorio-corpo.comparando tbody { display: block; }
+  .relatorio-corpo.comparando tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 8px; }
+  .relatorio-corpo.comparando tr:first-child th:first-child { display: none; }
+  .relatorio-corpo.comparando tr:first-child th:not(:first-child) { width: auto; }
+  .relatorio-corpo.comparando th[scope="row"] { grid-column: 1 / -1; padding-bottom: 0; }
+  .relatorio-corpo.comparando tr + tr td { border-top: 0; }
+  .relatorio-corpo.comparando td { font-size: .8rem; padding-left: 0; }
+}
 .relatorio-corpo.comparando td:first-of-type { color: var(--ink); font-weight: 600; }
 .comparar { display: flex; align-items: center; gap: 8px; font-size: .95rem; cursor: pointer; user-select: none; }
 .comparar input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
