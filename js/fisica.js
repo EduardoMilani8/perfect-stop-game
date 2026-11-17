@@ -105,11 +105,46 @@ function passo(estado, segurando, fase, dt) {
   return { t, s, v, a, p, fim };
 }
 
+/* ---------- Análise de uma jogada (usada no relatório) ---------- */
+// Recebem listas de amostras: ts = [t0, t1, …] e ys = [y0, y1, …] (valores de f nesses instantes).
+
+// Taxa de variação média de f entre t0 e t1 (a inclinação da reta secante):
+// [f(t1) − f(t0)] / (t1 − t0)
+function taxaDeVariacaoMedia(f0, f1, t0, t1) {
+  return derivadaNoTempo(f1, f0, t1 - t0);
+}
+
+// Integral de f no tempo pela regra dos trapézios (área sob o gráfico):
+// ∫ f(t) dt ≈ Σ [f(tᵢ) + f(tᵢ₊₁)] / 2 · (tᵢ₊₁ − tᵢ)
+function integralTrapezios(ts, ys) {
+  let area = 0;
+  for (let i = 0; i + 1 < ts.length; i++) {
+    area += (ys[i] + ys[i + 1]) / 2 * (ts[i + 1] - ts[i]);
+  }
+  return area;
+}
+
+// Instantes em que f passa pelo valor alvo, por interpolação linear entre duas amostras:
+// t = tᵢ + (alvo − yᵢ) · (tᵢ₊₁ − tᵢ) / (yᵢ₊₁ − yᵢ)
+// Devolve [{ t, sobe }] — sobe = true se f passou de baixo para cima do alvo.
+function instantesOndeCruza(ts, ys, alvo) {
+  const cruzamentos = [];
+  for (let i = 0; i + 1 < ts.length; i++) {
+    const antes = ys[i] - alvo, depois = ys[i + 1] - alvo;
+    if (antes === 0 || antes * depois < 0) {
+      const t = ts[i] + (alvo - ys[i]) * (ts[i + 1] - ts[i]) / (ys[i + 1] - ys[i]);
+      cruzamentos.push({ t, sobe: ys[i + 1] > ys[i] });
+    }
+  }
+  return cruzamentos;
+}
+
 /* ---------- Exportação para os testes no Node ---------- */
 if (typeof module !== "undefined") {
   module.exports = {
     G, FREIO_MAX, C_AR, ROLAGEM, PEDAL_SOBE, PEDAL_DESCE, DT, EPSILON,
     derivada, derivadaNoTempo, inclinacaoDaPista, componenteDaGravidade,
-    aceleracao, atualizarPedal, passo
+    aceleracao, atualizarPedal, passo,
+    taxaDeVariacaoMedia, integralTrapezios, instantesOndeCruza
   };
 }

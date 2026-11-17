@@ -85,5 +85,36 @@ FASES.forEach((fase, i) => {
   });
 });
 
-console.log(falhas ? `\n${falhas} teste(s) falharam.` : "\nTodos os testes passaram.");
+console.log("Análise da jogada");
+teste("taxa de variação média de 0 a 50 m em 5 s = 10", () =>
+  assert.strictEqual(F.taxaDeVariacaoMedia(0, 50, 0, 5), 10));
+teste("trapézios: ∫ 2t dt de 0 a 3 = 9 (exato para reta)", () => {
+  const ts = [0, 0.5, 1, 1.5, 2, 2.5, 3];
+  perto(F.integralTrapezios(ts, ts.map(t => 2 * t)), 9, 1e-12);
+});
+teste("trapézios: ∫ t² dt de 0 a 1 ≈ 1/3 com 1000 pedaços", () => {
+  const ts = Array.from({ length: 1001 }, (_, i) => i / 1000);
+  perto(F.integralTrapezios(ts, ts.map(t => t * t)), 1 / 3, 1e-6);
+});
+teste("cruzamento: 3, 1, −1 passa por 0 em t = 1,5 descendo", () => {
+  assert.deepStrictEqual(F.instantesOndeCruza([0, 1, 2], [3, 1, -1], 0), [{ t: 1.5, sobe: false }]);
+});
+teste("cruzamento: sen(t) em [0,1; 7] passa por 0 em π (desce) e 2π (sobe)", () => {
+  const ts = Array.from({ length: 690 }, (_, i) => 0.1 + i * 0.01);
+  const c = F.instantesOndeCruza(ts, ts.map(Math.sin), 0);
+  assert.strictEqual(c.length, 2);
+  perto(c[0].t, Math.PI, 1e-4); assert.strictEqual(c[0].sobe, false);
+  perto(c[1].t, 2 * Math.PI, 1e-4); assert.strictEqual(c[1].sobe, true);
+});
+teste("fase 1: a área sob v(t) é a distância percorrida", () => {
+  const fase = FASES[0];
+  let e = { t: 0, s: 0, v: fase.v0, a: 0, p: 0, fim: false };
+  const ts = [0], vs = [fase.v0];
+  while (!e.fim) { e = F.passo(e, e.t >= 3.77, fase, F.DT); ts.push(e.t); vs.push(e.v); }
+  // passo() soma s += v(t + Δt)·Δt (soma de Riemann pela direita); os trapézios dão a média
+  // entre as somas pela esquerda e pela direita, então a diferença é exatamente (v₀ − v_final)·Δt/2
+  perto(F.integralTrapezios(ts, vs) - e.s, (fase.v0 - e.v) * F.DT / 2, 1e-9, "área − s:");
+});
+
+console.log(falhas ?`\n${falhas} teste(s) falharam.` : "\nTodos os testes passaram.");
 process.exit(falhas ? 1 : 0);
