@@ -77,7 +77,10 @@ function atualizarPedal(p, segurando, dt) {
   return Math.min(1, Math.max(0, novo));
 }
 
-// Um passo da simulação (método de Euler), na ordem:
+// Um passo da simulação (método de Euler).
+// Ideia: a derivada é v = ds/dt ≈ Δs/Δt, então num Δt pequeno Δs ≈ v·Δt.
+// Do mesmo jeito, a = dv/dt ≈ Δv/Δt, então Δv ≈ a·Δt.
+// Ordem das contas:
 //   p ← p ± velocidade_do_pedal · Δt
 //   a ← a(s, v, p)
 //   v(t + Δt) = v(t) + a · Δt        (se v ≤ 0: v = 0 e o carro parou)
@@ -96,7 +99,7 @@ function passo(estado, segurando, fase, dt) {
     fim = true;
   }
 
-  const s = estado.s + v * dt;                         // s(t + Δt) = s(t) + v·Δt
+  const s = estado.s + v * dt;                         // s(t + Δt) = s(t) + v(t + Δt)·Δt  (usa o v novo)
   const t = estado.t + dt;                             // t ← t + Δt
 
   return { t, s, v, a, p, fim };

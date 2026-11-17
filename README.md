@@ -21,7 +21,7 @@ a aceleração.
 
 ## Rodando
 
-Abra o `index.html` no navegador (funciona offline). Versão online: _link do GitHub Pages aqui_.
+Abra o `index.html` no navegador (funciona offline). Versão online: **https://eduardomilani8.github.io/perfect-stop-game/**
 
 Testes da física: `node tests/fisica.test.js`
 
