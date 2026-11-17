@@ -76,6 +76,7 @@ function desenharCena() {
 
   // carro
   const Lp = Math.max(4.2 * k, 84);                     // comprimento do carro (px)
+  desenharMarcasDePneu(ctx, X, Y, Lp / k);
   const topo = desenharCarro(ctx, X, Y, k, Lp);
 
   // velocidade acima do carro
@@ -150,6 +151,21 @@ function desenharSemaforo(ctx, xp, yf, verde) {
   });
 }
 
+// Marcas de pneu no asfalto por onde as rodas passaram com o freio acima de 80%
+function desenharMarcasDePneu(ctx, X, Y, L) {
+  const d = est.hist;
+  ctx.strokeStyle = "rgba(8,9,11,0.85)"; ctx.lineWidth = 3.5; ctx.lineCap = "round";
+  ctx.beginPath();
+  for (let i = 1; i < d.length; i++) {
+    if (d[i].p < 0.8) continue;
+    [0.2 * L, 0.8 * L].forEach(atras => {             // roda da frente e roda de trás
+      const a = d[i - 1].s - atras, b = d[i].s - atras;
+      ctx.moveTo(X(a), Y(a) + 1); ctx.lineTo(X(b), Y(b) + 1);
+    });
+  }
+  ctx.stroke(); ctx.lineCap = "butt";
+}
+
 // Carro de lado. A frente do carro é a posição s; ele inclina junto com a pista.
 // Devolve o ponto acima do teto, onde vai o texto da velocidade.
 function desenharCarro(ctx, X, Y, k, Lp) {
@@ -163,6 +179,10 @@ function desenharCarro(ctx, X, Y, k, Lp) {
   // sombra
   ctx.fillStyle = "rgba(0,0,0,0.22)";
   ctx.beginPath(); ctx.ellipse(0, chao + raio - 1, Lp * 0.52, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+  // ao frear, a carroceria "mergulha" o nariz, proporcional à desaceleração (só visual)
+  const mergulho = est.rodando ? Math.min(0.07, Math.max(0, (-est.a - 1) * 0.009)) : 0;
+  ctx.save(); ctx.translate(0, chao); ctx.rotate(mergulho); ctx.translate(0, -chao);
 
   // carroceria com degradê
   const tinta = ctx.createLinearGradient(0, chao - 1.75 * H, 0, chao);
@@ -205,6 +225,7 @@ function desenharCarro(ctx, X, Y, k, Lp) {
   }
   // farol
   ctx.fillStyle = "#ffe48a"; ctx.fillRect(0.5 * Lp - 3, chao - 0.78 * H, 3, H * 0.26);
+  ctx.restore();   // fim do mergulho: as rodas continuam no chão
 
   // rodas: giram o ângulo θ = s / r (rolar sem deslizar)
   const giro = (sc * k) / raio;
