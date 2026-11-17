@@ -39,6 +39,17 @@ function ret(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
 
+// etiqueta arredondada com texto, centrada em x, com o meio na altura y
+function etiqueta(ctx, texto, x, y, corTexto, fonte) {
+  ctx.font = fonte; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const larg = ctx.measureText(texto).width + 16, alt = 22;
+  ctx.save();
+  ctx.shadowColor = "rgba(22, 27, 34, 0.18)"; ctx.shadowBlur = 6; ctx.shadowOffsetY = 1;
+  ctx.fillStyle = "#ffffff"; ret(ctx, x - larg / 2, y - alt / 2, larg, alt, alt / 2); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = corTexto; ctx.fillText(texto, x, y + 0.5);
+}
+
 /* ---------- Pista vista de lado ---------- */
 
 function desenharCena() {
@@ -51,7 +62,8 @@ function desenharCena() {
   const S0 = -x0 / k;                                   // começo do trecho visível (m)
   let hMin = 0;
   for (let s = S0; s <= S1; s += 0.5) hMin = Math.min(hMin, fase.h(s));
-  const base = Math.min(h * 0.74 + hMin * k * 0.5, h - 46 + hMin * k);
+  // altura da pista: embaixo dela precisa caber o meio-fio, as marcas e a etiqueta do erro (~80 px)
+  const base = Math.min(h * 0.72 + hMin * k * 0.5, h - 82 + hMin * k);
   const X = s => (s - S0) * k, Y = s => base - fase.h(s) * k;        // metros → pixels
   const mono = cor("--font-mono");
 
@@ -63,8 +75,8 @@ function desenharCena() {
   ctx.fillStyle = cor("--muted"); ctx.font = `10px ${mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
   for (let s = 0; s <= S1; s += 10) {
     if (Math.abs(X(s) - X(fase.D)) < 30) continue;   // não encosta no rótulo da faixa
-    ctx.fillRect(X(s) - 0.5, Y(s) + 13, 1, 4);
-    ctx.fillText(`${s} m`, X(s), Y(s) + 19);
+    ctx.fillRect(X(s) - 0.5, Y(s) + 19, 1, 4);
+    ctx.fillText(`${s} m`, X(s), Y(s) + 25);
   }
   ctx.restore();
 
@@ -75,7 +87,7 @@ function desenharCena() {
     ctx.fillRect(xf - 2.5, yf - 2 + i * 3.5, 5, 3.5);
   }
   ctx.fillStyle = cor("--ink"); ctx.font = `600 12px ${mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
-  ctx.fillText(`${fase.D} m`, xf, yf + 19);
+  ctx.fillText(`${fase.D} m`, xf, yf + 25);
   desenharSemaforo(ctx, xf + 14, yf, resultado && resultado.ok);
 
   // carro
@@ -83,17 +95,22 @@ function desenharCena() {
   const topo = desenharCarro(ctx, X, Y, k, Lp);
 
   // velocidade acima do carro
-  ctx.fillStyle = cor("--ink"); ctx.font = `700 15px ${cor("--font-display")}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-  ctx.fillText(`${kmh(est.v)} km/h`, topo.x, topo.y);
+  etiqueta(ctx, `${kmh(est.v)} km/h`, topo.x, topo.y - 8, cor("--ink"), `700 15px ${cor("--font-display")}`);
 
   // erro final, abaixo da pista
   if (resultado && !resultado.avancou) {
-    const xa = X(est.s), y0 = yf + 42;
-    ctx.strokeStyle = resultado.ok ? cor("--ok") : cor("--bad"); ctx.fillStyle = ctx.strokeStyle; ctx.lineWidth = 2;
+    const xa = X(est.s), y0 = yf + 46;
+    const corErro = resultado.ok ? cor("--ok") : cor("--bad");
+    ctx.strokeStyle = corErro; ctx.fillStyle = corErro; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(xa, y0); ctx.lineTo(xf, y0); ctx.stroke();
-    [xa, xf].forEach(x => ctx.fillRect(x - 1, y0 - 4, 2, 8));
-    ctx.font = `600 13px ${mono}`; ctx.textBaseline = "top";
-    ctx.fillText(`${resultado.erro > 0 ? "+" : "−"}${fmt(Math.abs(resultado.erro))} m`, (xa + xf) / 2, y0 + 5);
+    [xa, xf].forEach(x => ctx.fillRect(x - 1, y0 - 6, 2, 12));       // limites: frente do carro e faixa
+    if (Math.abs(xf - xa) > 14) {                                      // setas, se houver espaço
+      const dir = Math.sign(xf - xa);
+      [[xa, dir], [xf, -dir]].forEach(([x, d]) => {
+        ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x + 6 * d, y0 - 4); ctx.lineTo(x + 6 * d, y0 + 4); ctx.closePath(); ctx.fill();
+      });
+    }
+    etiqueta(ctx, `${resultado.erro > 0 ? "+" : "−"}${fmt(Math.abs(resultado.erro))} m`, (xa + xf) / 2, y0 + 18, corErro, `600 13px ${mono}`);
   }
 }
 
@@ -131,6 +148,8 @@ function desenharPista(ctx, w, h, X, Y, sIni, sFim) {
   ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
 
   ctx.lineJoin = "round"; ctx.lineCap = "butt";
+  ctx.strokeStyle = "#c3c8ce"; ctx.lineWidth = 5; caminho(14); ctx.stroke();                     // meio-fio
+  ctx.strokeStyle = "rgba(22,27,34,0.18)"; ctx.lineWidth = 1; caminho(16.5); ctx.stroke();        // sombra do meio-fio
   ctx.strokeStyle = cor("--road"); ctx.lineWidth = 14; caminho(5); ctx.stroke();
   ctx.strokeStyle = "rgba(255,255,255,0.18)"; ctx.lineWidth = 1.5; caminho(-1.5); ctx.stroke();   // borda iluminada
   ctx.strokeStyle = cor("--paint"); ctx.lineWidth = 2; ctx.setLineDash([10, 10]); caminho(5); ctx.stroke(); ctx.setLineDash([]);
