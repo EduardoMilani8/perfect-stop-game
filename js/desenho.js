@@ -67,8 +67,10 @@ function desenharCena() {
   const X = s => (s - S0) * k, Y = s => base - fase.h(s) * k;        // metros → pixels
   const mono = cor("--font-mono");
 
-  desenharFundo(ctx, w, h, base);
-  desenharPista(ctx, w, h, X, Y, S0 - 1, S0 + w / k + 1);   // de borda a borda
+  const cen = CENARIOS[indiceFase];                     // aparência da fase atual
+  const tempo = movimentoReduzido.matches ? 0 : performance.now() / 1000;   // para nuvens e chuva
+  desenharFundo(ctx, w, h, base, cen, tempo);
+  desenharPista(ctx, w, h, X, Y, S0 - 1, S0 + w / k + 1, cen);   // de borda a borda
 
   // marcas de distância a cada 10 m
   ctx.save(); ctx.globalAlpha = 0.55;
@@ -95,6 +97,7 @@ function desenharCena() {
   const topo = desenharCarro(ctx, X, Y, k, Lp);
 
   // velocidade acima do carro
+  if (cen.chuva) desenharChuva(ctx, w, h, tempo);
   etiqueta(ctx, `${kmh(est.v)} km/h`, topo.x, topo.y - 8, cor("--ink"), `700 15px ${cor("--font-display")}`);
 
   // erro final, abaixo da pista
@@ -114,43 +117,138 @@ function desenharCena() {
   }
 }
 
-// Céu em degradê, prédios e morros ao fundo (fixos: só enfeite)
-const PREDIOS = [   // [x, largura, altura] em fração da tela
+/* ---------- Cenário de cada fase (só aparência, não entra na física) ---------- */
+
+const CENARIOS = [
+  { // 1 · Asfalto seco: dia de sol na cidade
+    ceuTopo: "#7fb8ec", ceuBase: "#dcecf8", sol: { x: 0.5, y: 0.2, raio: 20, cor: "#ffd84a" },
+    nuvens: "#ffffff", fundo: "cidade", corFundo: "#c3d2e1", morro: "#b5cb9f", altMorro: 1,
+    chao: "#c4d4ae", asfalto: "#3a3f46", chuva: false
+  },
+  { // 2 · Pista molhada: dia de chuva, asfalto escuro com poças
+    ceuTopo: "#7d8894", ceuBase: "#c3cad2", sol: null,
+    nuvens: "#9aa4ae", fundo: "cidade", corFundo: "#a3aeb9", morro: "#9aae92", altMorro: 1,
+    chao: "#a7b8a0", asfalto: "#2a2e34", chuva: true
+  },
+  { // 3 · Ladeira: fim de tarde no interior
+    ceuTopo: "#f29a62", ceuBase: "#fde4c3", sol: { x: 0.7, y: 0.62, raio: 30, cor: "#ffb257" },
+    nuvens: "#ffd9c2", fundo: "arvores", corFundo: "#7f9a5c", morro: "#a9bf83", altMorro: 1.8,
+    chao: "#bccb91", asfalto: "#3a3f46", chuva: false
+  }
+];
+
+const movimentoReduzido = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+// posições fixas (fração da tela) para os enfeites não "tremerem" a cada quadro
+const PREDIOS = [   // [x, largura, altura]
   [0.03, 0.05, 0.34], [0.085, 0.035, 0.46], [0.13, 0.06, 0.28], [0.21, 0.04, 0.40],
   [0.56, 0.05, 0.30], [0.62, 0.03, 0.50], [0.66, 0.06, 0.36], [0.80, 0.04, 0.44], [0.86, 0.07, 0.26]
 ];
-function desenharFundo(ctx, w, h, base) {
+const ARVORES = [   // [x, tamanho]
+  [0.04, 1], [0.08, 0.7], [0.15, 1.2], [0.19, 0.8], [0.33, 0.9], [0.45, 1.1], [0.49, 0.7],
+  [0.6, 1], [0.64, 1.3], [0.76, 0.8], [0.88, 1.1], [0.93, 0.75]
+];
+const NUVENS = [    // [x, altura, tamanho, velocidade em px/s]
+  [0.1, 0.16, 1, 6], [0.38, 0.1, 0.8, 4], [0.62, 0.22, 1.2, 5], [0.9, 0.12, 0.9, 7]
+];
+
+// Céu, sol, nuvens, cidade ou árvores e morros
+function desenharFundo(ctx, w, h, base, cen, tempo) {
   const ceu = ctx.createLinearGradient(0, 0, 0, base);
-  ceu.addColorStop(0, cor("--sky-top")); ceu.addColorStop(1, cor("--sky"));
+  ceu.addColorStop(0, cen.ceuTopo); ceu.addColorStop(1, cen.ceuBase);
   ctx.fillStyle = ceu; ctx.fillRect(0, 0, w, h);
 
-  ctx.fillStyle = cor("--city");
-  PREDIOS.forEach(([x, l, a]) => {
-    const alto = a * base;
-    ctx.fillRect(x * w, base - alto, l * w, alto);
-  });
+  if (cen.sol) {
+    const { x, y, raio, cor: c } = cen.sol, sx = x * w, sy = y * base;
+    const brilho = ctx.createRadialGradient(sx, sy, raio * 0.6, sx, sy, raio * 3);
+    brilho.addColorStop(0, c + "88"); brilho.addColorStop(1, c + "00");
+    ctx.fillStyle = brilho; ctx.beginPath(); ctx.arc(sx, sy, raio * 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = c; ctx.beginPath(); ctx.arc(sx, sy, raio, 0, Math.PI * 2); ctx.fill();
+  }
 
-  ctx.fillStyle = cor("--hill"); ctx.beginPath(); ctx.moveTo(0, h);
+  // nuvens andando devagar; na chuva ficam maiores e mais baixas
+  const n = cen.chuva ? 1.6 : 1;
+  NUVENS.forEach(([x, y, t, vel]) => {
+    const larg = w + 240, nx = ((x * w + tempo * vel) % larg + larg) % larg - 120;
+    desenharNuvem(ctx, nx, y * base * (cen.chuva ? 0.8 : 1), 22 * t * n, cen.nuvens);
+  });
+  if (cen.chuva) {
+    NUVENS.forEach(([x, y, t, vel]) => {      // segunda camada, para o céu ficar fechado
+      const larg = w + 240, nx = ((x * w + 0.5 * w + tempo * vel * 0.6) % larg + larg) % larg - 120;
+      desenharNuvem(ctx, nx, y * base * 0.5, 26 * t, "#8a949f");
+    });
+  }
+
+  ctx.fillStyle = cen.corFundo;
+  if (cen.fundo === "cidade") {
+    PREDIOS.forEach(([x, l, a]) => {
+      const alto = a * base;
+      ctx.fillRect(x * w, base - alto, l * w, alto);
+    });
+  }
+
+  const a = cen.altMorro;
+  ctx.fillStyle = cen.morro; ctx.beginPath(); ctx.moveTo(0, h);
   for (let x = 0; x <= w; x += 8) {
-    ctx.lineTo(x, base - 26 - 16 * Math.sin(x / w * 5.3) - 8 * Math.sin(x / w * 13 + 1));
+    ctx.lineTo(x, base - 26 * a - 16 * a * Math.sin(x / w * 5.3) - 8 * a * Math.sin(x / w * 13 + 1));
   }
   ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+
+  if (cen.fundo === "arvores") {
+    ARVORES.forEach(([x, t]) => {
+      const ax = x * w, chao = base - 26 * a - 16 * a * Math.sin(x * 5.3) - 8 * a * Math.sin(x * 13 + 1) + 6;
+      const alt = 34 * t;
+      ctx.fillStyle = "#6b5a45"; ctx.fillRect(ax - 1.5, chao - alt * 0.35, 3, alt * 0.35);
+      ctx.fillStyle = cen.corFundo;
+      ctx.beginPath(); ctx.moveTo(ax, chao - alt); ctx.lineTo(ax + alt * 0.32, chao - alt * 0.3); ctx.lineTo(ax - alt * 0.32, chao - alt * 0.3); ctx.closePath(); ctx.fill();
+    });
+  }
+}
+
+// nuvem feita de círculos
+function desenharNuvem(ctx, x, y, r, c) {
+  ctx.fillStyle = c; ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.arc(x + r * 1.1, y + r * 0.2, r * 0.8, 0, Math.PI * 2);
+  ctx.arc(x - r * 1.1, y + r * 0.25, r * 0.7, 0, Math.PI * 2);
+  ctx.arc(x + r * 0.3, y - r * 0.5, r * 0.75, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// chuva: 90 gotas em posições fixas, descendo e indo um pouco para a esquerda com o tempo
+function desenharChuva(ctx, w, h, tempo) {
+  const larg = w + 60, alt = h + 20;
+  ctx.strokeStyle = "rgba(225, 235, 245, 0.6)"; ctx.lineWidth = 1.2; ctx.beginPath();
+  for (let i = 0; i < 90; i++) {
+    const x0 = ((i * 0.618034) % 1) * larg, y0 = ((i * 0.414214) % 1) * alt;
+    const y = (y0 + tempo * 420) % alt - 10;
+    const x = ((x0 - tempo * 84) % larg + larg) % larg - 30;
+    ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 14);
+  }
+  ctx.stroke();
 }
 
 // Chão e asfalto acompanhando h(s), de sIni a sFim (metros)
-function desenharPista(ctx, w, h, X, Y, sIni, sFim) {
+function desenharPista(ctx, w, h, X, Y, sIni, sFim, cen) {
   const caminho = desloc => {
     ctx.beginPath();
     for (let s = sIni; s <= sFim; s += 0.5) { const x = X(s), y = Y(s) + desloc; s === sIni ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
   };
-  ctx.fillStyle = cor("--ground"); ctx.beginPath(); ctx.moveTo(0, h);
+  ctx.fillStyle = cen.chao; ctx.beginPath(); ctx.moveTo(0, h);
   for (let s = sIni; s <= sFim; s += 0.5) ctx.lineTo(X(s), Y(s) + 10);
   ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
 
   ctx.lineJoin = "round"; ctx.lineCap = "butt";
   ctx.strokeStyle = "#c3c8ce"; ctx.lineWidth = 5; caminho(14); ctx.stroke();                     // meio-fio
   ctx.strokeStyle = "rgba(22,27,34,0.18)"; ctx.lineWidth = 1; caminho(16.5); ctx.stroke();        // sombra do meio-fio
-  ctx.strokeStyle = cor("--road"); ctx.lineWidth = 14; caminho(5); ctx.stroke();
+  ctx.strokeStyle = cen.asfalto; ctx.lineWidth = 14; caminho(5); ctx.stroke();
+  if (cen.chuva) {                                      // poças refletindo o céu
+    ctx.strokeStyle = "rgba(190, 210, 230, 0.45)"; ctx.lineWidth = 3; ctx.lineCap = "round";
+    [-3, 8, 21, 29, 44, 57, 68].forEach(s0 => {
+      ctx.beginPath(); ctx.moveTo(X(s0), Y(s0) + 1); ctx.lineTo(X(s0 + 2.5), Y(s0 + 2.5) + 1); ctx.stroke();
+    });
+    ctx.lineCap = "butt";
+  }
   ctx.strokeStyle = "rgba(255,255,255,0.18)"; ctx.lineWidth = 1.5; caminho(-1.5); ctx.stroke();   // borda iluminada
   ctx.strokeStyle = cor("--paint"); ctx.lineWidth = 2; ctx.setLineDash([10, 10]); caminho(5); ctx.stroke(); ctx.setLineDash([]);
 }

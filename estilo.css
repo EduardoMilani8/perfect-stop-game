@@ -12,12 +12,6 @@
   --ink: #161b22;
   --muted: #5d6773;
   --line: #d6dbe1;
-  --sky: #dde9f3;
-  --sky-top: #b7d3ee;
-  --city: #c9d6e2;
-  --hill: #b7cba3;
-  --ground: #c5d3b3;
-  --road: #3a3f46;
   --paint: #f2c230;
   --signal: #d8262f;
   --accent: #1f5fd1;
@@ -66,6 +60,11 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: c
 .fases small { font-family: var(--font-mono); font-size: .75rem; color: var(--muted); }
 .fases button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .fases button[aria-pressed="true"] small { color: var(--paint); }
+/* cada fase com a cor do seu cenário: sol, chuva e fim de tarde */
+#fase-1 { --cor-fase: #f2b705; }
+#fase-2 { --cor-fase: #4a90c8; }
+#fase-3 { --cor-fase: #e8743b; }
+.fases b::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--cor-fase); margin-right: 7px; vertical-align: .08em; }
 
 /* ---------- Pista e comandos ---------- */
 .grade { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
@@ -82,7 +81,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: c
 /* o veredito aparece com um pequeno "pulo" */
 .veredito:not([hidden]) { animation: aparecer .4s cubic-bezier(.2, 1.5, .4, 1); }
 @keyframes aparecer { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
-.cena { border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--sky); box-shadow: var(--sombra); }
+.cena { border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; background: #dcecf8; box-shadow: var(--sombra); }
 #cena { display: block; width: 100%; height: clamp(240px, 38vh, 380px); }
 
 .comandos { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
