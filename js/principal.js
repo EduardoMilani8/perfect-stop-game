@@ -72,7 +72,7 @@ function mostrarVeredito() {
 function escolherFase(i) {
   indiceFase = i; fase = FASES[i];
   $("fases").querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-pressed", String(j === i)));
-  $("missao").innerHTML = `<strong>Pare na faixa a ${fase.D} m</strong>${fase.dica}`;
+  $("missao").innerHTML = `<strong>Pare na faixa a ${fase.D} m</strong><span>${fase.dica}</span>`;
   reiniciar();
 }
 

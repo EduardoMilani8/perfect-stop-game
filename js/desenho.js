@@ -65,12 +65,14 @@ function desenharCena() {
   for (let s = S0; s <= S1 + 1; s += 0.5) { const x = X(s), y = Y(s) + 5; s === S0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
   ctx.stroke(); ctx.setLineDash([]);
   // marcas de distância a cada 10 m
-  ctx.fillStyle = cor("--muted"); ctx.font = `11px ${mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+  ctx.save(); ctx.globalAlpha = 0.55;
+  ctx.fillStyle = cor("--muted"); ctx.font = `10px ${mono}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
   for (let s = 0; s <= S1; s += 10) {
     if (Math.abs(s - fase.D) < 4) continue;
-    ctx.fillRect(X(s) - 0.5, Y(s) + 13, 1, 6);
-    ctx.fillText(`${s} m`, X(s), Y(s) + 21);
+    ctx.fillRect(X(s) - 0.5, Y(s) + 13, 1, 4);
+    ctx.fillText(`${s} m`, X(s), Y(s) + 19);
   }
+  ctx.restore();
   // faixa de parada e semáforo
   const xf = X(fase.D), yf = Y(fase.D);
   ctx.fillStyle = "#ffffff"; ctx.fillRect(xf - 2, yf - 2, 4, 14);
@@ -189,9 +191,6 @@ function desenhar() {
   grafico("g-v", "v", { inclinacao: "aD" });
   grafico("g-a", "a", {});
   const p = est.hist[indiceAtual()];
-  $("l-s").innerHTML = `s = <b>${fmt(p.s)} m</b> · inclinação da tangente = v = <b>${fmt(p.vD)}</b>`;
-  $("l-v").innerHTML = `v = <b>${fmt(p.v)} m/s</b> · inclinação da tangente = a = <b>${fmt(p.aD)}</b>`;
-  $("l-a").innerHTML = `a = <b>${fmt(p.a)} m/s²</b> · freio em <b>${Math.round(p.p * 100)}%</b>`;
   // telemetria
   $("kmh").textContent = kmh(p.v);
   $("falta").textContent = fmt(fase.D - p.s, 1);
@@ -199,9 +198,10 @@ function desenhar() {
   $("t-s").textContent = fmt(p.s) + " m";
   $("t-v").textContent = fmt(p.vD) + " m/s";
   $("t-a").textContent = fmt(p.aD) + " m/s²";
-  $("t-p").textContent = Math.round(p.p * 100) + "%";
   $("pedal").style.width = (p.p * 100) + "%";
-  $("instante").textContent = inspecao == null ? "ao vivo" : `inspecionando t = ${fmt(p.t)} s`;
+  // só aparece quando o jogador passa o mouse nos gráficos
+  $("instante").hidden = inspecao == null;
+  if (inspecao != null) $("instante").textContent = `inspecionando t = ${fmt(p.t)} s`;
   // botão do freio enche conforme o pedal
   const pedalBotao = est.rodando ? est.p : 0;
   $("freio").style.setProperty("--p", pedalBotao);
