@@ -1,6 +1,6 @@
 # 02 — Regras e física
 
-Todos os valores abaixo são os do protótipo (`prototipo/index.html`). Não mudar sem motivo.
+Todos os valores abaixo são os usados no jogo (`js/fisica.js` e `js/fases.js`). Não mudar sem motivo.
 
 ## Regras
 

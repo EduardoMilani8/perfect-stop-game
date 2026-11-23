@@ -14,8 +14,6 @@ perfect-stop-game/
 │   └── principal.js   estado do jogo, botões, teclado e laço de animação
 ├── tests/
 │   └── fisica.test.js
-├── prototipo/
-│   └── index.html     referência (não apagar)
 └── docs/
 ```
 

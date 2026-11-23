@@ -1,6 +1,6 @@
 # 03 — Interface
 
-Visual baseado no protótipo (`prototipo/index.html`), com um polimento depois da Etapa 2:
+Visual baseado no protótipo inicial (já removido do repositório), com um polimento depois da Etapa 2:
 menos informação na tela, cena mais caprichada, um cenário para cada fase e acabamento dos
 botões. **Só modo claro.** Resumo do que existe:
 

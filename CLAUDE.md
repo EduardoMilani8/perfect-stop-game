@@ -10,9 +10,8 @@ Leia antes de começar, nesta ordem:
 4. `docs/04-arquitetura.md` — arquivos e o que cada um faz
 5. `docs/05-plano.md` — etapas e prazos
 
-**Existe um protótipo pronto em `prototipo/index.html`.** Ele já funciona e foi aprovado.
-O seu trabalho é principalmente **reorganizar esse protótipo em arquivos separados e
-comentados**, sem mudar o comportamento nem o visual (exceto o que os docs pedirem).
+O jogo está pronto (`index.html` + `js/`). O protótipo inicial foi removido: a versão final é a referência.
+Qualquer mudança deve manter o comportamento e o visual atuais (exceto o que os docs pedirem).
 
 ## Regras que não podem ser quebradas
 
@@ -36,7 +35,7 @@ comentados**, sem mudar o comportamento nem o visual (exceto o que os docs pedir
 - Descrição: `Jogo de Cálculo I: freie o carro e pare na faixa. Velocidade e aceleração como derivadas da posição.`
 
 1. `gh auth status` (se não estiver autenticado, peça ao usuário para rodar `gh auth login`).
-2. `git init`, primeiro commit com `README.md`, `CLAUDE.md`, `docs/` e `prototipo/`.
+2. `git init`, primeiro commit com `README.md`, `CLAUDE.md`, `docs/` e o protótipo (removido depois).
 3. `gh repo create perfect-stop-game --public --source=. --remote=origin --push --description "..."`
 4. Um commit por etapa do `docs/05-plano.md`, mensagem em português.
 5. No fim, ative o GitHub Pages (branch `main`, raiz) e coloque o link no `README.md`.
@@ -44,4 +43,4 @@ comentados**, sem mudar o comportamento nem o visual (exceto o que os docs pedir
 ## Como conferir
 
 - `node tests/fisica.test.js` precisa passar sempre que `js/fisica.js` mudar.
-- Ao final, jogue as 3 fases no navegador e confira que o comportamento é igual ao do protótipo.
+- Ao final, jogue as 3 fases no navegador e confira que o comportamento é igual ao descrito nos docs.
