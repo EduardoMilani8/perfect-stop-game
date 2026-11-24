@@ -441,7 +441,7 @@ function grafico(id, chave, opt) {
   return { P, tMax, w };
 }
 
-// Destaques do relatório: linhas verticais (instantes), horizontais (valores) e pontos marcados
+// Destaques do relatório: linhas verticais (instantes) e pontos marcados
 function desenharDestaques(ctx, d, X, Y, P, w, h) {
   const roxo = cor("--destaque"), mono = cor("--font-mono");   // cor das marcas
   ctx.save();
@@ -450,9 +450,6 @@ function desenharDestaques(ctx, d, X, Y, P, w, h) {
   (d.verticais || []).forEach(({ t, rotulo }) => {
     ctx.beginPath(); ctx.moveTo(X(t), P.t); ctx.lineTo(X(t), h - P.b); ctx.stroke();
     ctx.textAlign = "left"; ctx.textBaseline = "bottom"; ctx.fillText(rotulo, X(t) + 3, h - P.b - 2);
-  });
-  (d.horizontais || []).forEach(({ y }) => {
-    ctx.beginPath(); ctx.moveTo(P.l, Y(y)); ctx.lineTo(w - P.r, Y(y)); ctx.stroke();
   });
   ctx.setLineDash([]);
   (d.pontos || []).forEach(({ t, y, rotulo, embaixo }) => {
@@ -476,13 +473,7 @@ function destaquesDoRelatorio() {
   const r = relatorio;
   const freio = r.freio ? [{ t: r.freio.t, rotulo: "freio" }] : [];   // instante em que o pedal começou a descer
   const v = { verticais: freio, pontos: [{ t: r.tVMax, y: r.vMax, rotulo: "máx" }] };
-  if (r.tValorMedio != null) {
-    v.horizontais = [{ y: r.vMedia }];
-    v.pontos.push({ t: r.tValorMedio, y: r.vMedia, rotulo: "média", embaixo: true });
-  }
-  const a = { verticais: freio, pontos: [] };
-  if (r.tPontoCritico != null) a.pontos.push({ t: r.tPontoCritico, y: 0, rotulo: "zero", embaixo: true });
-  return { s: { verticais: freio }, v, a };
+  return { s: { verticais: freio }, v, a: { verticais: freio } };
 }
 
 /* ---------- Tudo de uma vez, a cada quadro ---------- */

@@ -19,8 +19,7 @@ a aceleração.
 - **Reiniciar** (botão ou tecla **R**): volta o carro para a largada.
 - Pare na faixa: ★★★ até 25 cm, ★★ até 1 m, ★ até 2,5 m.
 - Depois da freada, passe o mouse nos gráficos para ver qualquer instante.
-- No fim aparece o **relatório da jogada** (freada, velocidade e aceleração e conceitos de
-  Cálculo). Marque **"Comparar a próxima jogada com esta"** para ver a jogada seguinte ao lado
+- No fim aparece o **relatório da jogada** (freada, velocidade e aceleração). Marque **"Comparar a próxima jogada com esta"** para ver a jogada seguinte ao lado
   da anterior (carro fantasma, curva cinza nos gráficos e colunas de diferença).
 
 ## Rodando
@@ -28,6 +27,14 @@ a aceleração.
 Abra o `index.html` no navegador (funciona offline). Versão online: **https://eduardomilani8.github.io/perfect-stop-game/**
 
 Testes da física: `node tests/fisica.test.js`
+
+## A física em uma linha
+
+Toda a matemática está em [`js/fisica.js`](js/fisica.js):
+
+- aceleração: `a = − 8·μ·p − G·h′(s)` (freio + ladeira);
+- derivada pela definição: `f′(x) ≈ [f(x + Δx) − f(x)] / Δx`, com Δx bem pequeno;
+- a cada Δt, pela diferencial: `s ← s + v·Δt` e `v ← v + a·Δt`.
 
 ## Grupo
 

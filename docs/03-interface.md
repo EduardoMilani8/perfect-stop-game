@@ -42,18 +42,15 @@ botões. **Só modo claro.** Resumo do que existe:
 - **Reta tangente vermelha** no instante atual nos gráficos de posição e de velocidade.
 - Depois da freada, passar o mouse/dedo sobre os gráficos mostra qualquer instante
   (os valores aparecem no painel de telemetria; não há texto embaixo dos gráficos).
-- No fim da jogada, destaques nos gráficos: linha roxa no instante em que o freio começou,
-  pontos de **velocidade máxima** e **média** (com a linha da média) e o ponto onde a
-  aceleração passa por **zero**.
+- No fim da jogada, destaques nos gráficos: linha roxa no instante em que o freio começou e
+  o ponto de **velocidade máxima**.
 
 ## Relatório da jogada (embaixo dos gráficos, aparece quando o carro para)
-Três grupos de números, cada um com uma frase curta (sem fórmulas):
+Dois grupos de números, cada um com uma frase curta (sem fórmulas):
 - **Freada:** quando começou a frear (e quanto faltava), velocidade ao frear, duração,
   distância de frenagem, desaceleração média e maior desaceleração.
-- **Velocidade e aceleração:** velocidade máxima (ponto crítico de v(t) ou extremo do
-  intervalo), velocidade média e maior aceleração (só quando há descida).
-- **Conceitos de Cálculo:** instante do Teorema do Valor Médio, área sob v(t) comparada com a
-  distância, concavidade de s(t) por trechos e a precisão da derivada numérica.
+- **Velocidade e aceleração:** velocidade máxima, velocidade média (taxa de variação média da
+  posição), maior aceleração (só quando há descida) e a precisão da derivada numérica.
 
 Caixa **"Comparar a próxima jogada com esta"**: na jogada seguinte da mesma fase aparece um
 carro fantasma, a curva anterior em cinza tracejado nos gráficos e, no relatório, as colunas

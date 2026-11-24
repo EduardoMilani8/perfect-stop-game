@@ -2,7 +2,7 @@
  * relatorio.js — relatório de uma jogada, mostrado quando o carro para.
  *
  * montarRelatorio() junta os números a partir do histórico { t, s, v, a, p, vD, aD }
- * usando as contas de fisica.js (taxa de variação média, integral e cruzamentos).
+ * usando a taxa de variação média de fisica.js.
  * mostrarRelatorio() escreve o cartão na tela. Sem equações: só números e frases.
  */
 
@@ -27,34 +27,13 @@ function montarRelatorio(hist, fase, resultado) {
   r.desacelMax = -Math.min(...as);
   r.acelMax = Math.max(...as);
 
-  // velocidade média e o instante do Teorema do Valor Médio (v instantânea = v média)
+  // velocidade média: taxa de variação média da posição em toda a jogada
   r.vMedia = taxaDeVariacaoMedia(0, fim.s, 0, fim.t);
-  const valorMedio = instantesOndeCruza(ts, vs, r.vMedia);
-  r.tValorMedio = valorMedio.length ? valorMedio[0].t : null;
 
-  // integral: área sob v(t) comparada com a distância
-  r.area = integralTrapezios(ts, vs);
-
-  // velocidade máxima; se não for no início, é onde a aceleração passa de + para − (ponto crítico)
+  // velocidade máxima e o instante em que ela aconteceu
   let iMax = 0;
   vs.forEach((v, i) => { if (v > vs[iMax]) iMax = i; });
-  r.vMax = vs[iMax]; r.tVMax = ts[iMax]; r.vMaxNoInicio = iMax === 0;
-  const zeros = instantesOndeCruza(ts, as, 0).filter(z => !z.sobe);
-  r.tPontoCritico = zeros.length
-    ? zeros.reduce((m, z) => Math.abs(z.t - r.tVMax) < Math.abs(m.t - r.tVMax) ? z : m).t
-    : null;
-
-  // concavidade de s(t): trechos com a < 0 (para baixo) e a > 0 (para cima)
-  const cortes = [0, ...instantesOndeCruza(ts, as, 0).map(z => z.t), fim.t];
-  r.concavidade = [];
-  for (let i = 0; i + 1 < cortes.length; i++) {
-    const meio = (cortes[i] + cortes[i + 1]) / 2;
-    const j = ts.findIndex(t => t >= meio);
-    const trecho = { t0: cortes[i], t1: cortes[i + 1], paraBaixo: as[j] < 0 };
-    const ultimo = r.concavidade[r.concavidade.length - 1];
-    if (ultimo && ultimo.paraBaixo === trecho.paraBaixo) ultimo.t1 = trecho.t1;
-    else if (trecho.t1 - trecho.t0 > 0.02) r.concavidade.push(trecho);   // ignora trechos minúsculos
-  }
+  r.vMax = vs[iMax]; r.tVMax = ts[iMax];
 
   // precisão da derivada numérica: Δs/Δt medido × velocidade da simulação
   r.erroDerivada = Math.max(...hist.slice(1).map(p => Math.abs(p.vD - p.v)));
@@ -82,32 +61,15 @@ function linhasDoRelatorio(r) {
   }
   add("Freada", "desacelMax", "Maior desaceleração", `${fmt(r.desacelMax)} m/s²`, r.desacelMax, "m/s²", "o valor mais negativo de a(t)");
 
-  add("Velocidade e aceleração", "vMax", "Velocidade máxima", `${fmt(r.vMax)} m/s`, r.vMax, "m/s",
-    r.vMaxNoInicio
-      ? "em t = 0: v(t) só diminui, então o máximo fica no extremo do intervalo"
-      : r.tPontoCritico != null
-        ? `em t = ${fmt(r.tVMax)} s, onde a(t) passa por zero: ponto crítico de v(t)`
-        : `em t = ${fmt(r.tVMax)} s`);
-  add("Velocidade e aceleração", "vMedia", "Velocidade média", `${fmt(r.vMedia)} m/s`, r.vMedia, "m/s", "distância percorrida ÷ tempo total");
+  add("Velocidade e aceleração", "vMax", "Velocidade máxima", `${fmt(r.vMax)} m/s`, r.vMax, "m/s", `em t = ${fmt(r.tVMax)} s`);
+  add("Velocidade e aceleração", "vMedia", "Velocidade média", `${fmt(r.vMedia)} m/s`, r.vMedia, "m/s",
+    "taxa de variação média da posição: distância ÷ tempo");
   if (r.acelMax > 0.05) {
     add("Velocidade e aceleração", "acelMax", "Maior aceleração", `${fmt(r.acelMax)} m/s²`, r.acelMax, "m/s²", "a descida empurrando o carro");
   }
-
-  add("Conceitos de Cálculo", "tvm", "Teorema do Valor Médio",
-    r.tValorMedio != null ? `t = ${fmt(r.tValorMedio)} s` : "—", r.tValorMedio, "s",
-    `instante em que a velocidade instantânea foi igual à média (${fmt(r.vMedia)} m/s)`);
-  add("Conceitos de Cálculo", "area", "Área sob v(t)", `${fmt(r.area)} m`, r.area, "m",
-    `distância percorrida: ${fmt(r.sTotal)} m — a integral da velocidade dá a posição`);
-  add("Conceitos de Cálculo", "concavidade", "Concavidade de s(t)", textoConcavidade(r.concavidade, r.tTotal), null, "",
-    "para baixo onde a aceleração é negativa, para cima onde é positiva");
-  add("Conceitos de Cálculo", "erroDerivada", "Derivada numérica", `${fmt(r.erroDerivada, 3)} m/s`, r.erroDerivada, "m/s",
-    "maior diferença entre a velocidade medida (distância ÷ tempo a cada quadro) e a da simulação");
+  add("Velocidade e aceleração", "erroDerivada", "Derivada numérica", `${fmt(r.erroDerivada, 3)} m/s`, r.erroDerivada, "m/s",
+    "maior diferença entre a velocidade medida (Δs/Δt a cada quadro) e a da simulação");
   return L;
-}
-
-function textoConcavidade(trechos, tTotal) {
-  if (trechos.length === 1) return trechos[0].paraBaixo ? "para baixo na jogada toda" : "para cima na jogada toda";
-  return trechos.map(c => `${c.paraBaixo ? "para baixo" : "para cima"}: ${fmt(c.t0, 1)}–${fmt(c.t1, 1)} s`).join("<br>");
 }
 
 /* ---------- Cartão na tela ---------- */

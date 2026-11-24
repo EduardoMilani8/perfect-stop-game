@@ -2,7 +2,8 @@
  * principal.js — estado do jogo, botões, teclado e laço de animação.
  *
  * A cada quadro (1/60 s) chama passo() de fisica.js duas vezes (Δt = 1/120 s),
- * mede as derivadas v ≈ Δs/Δt e a ≈ Δv/Δt e guarda tudo no histórico.
+ * mede as derivadas pela taxa de variação num intervalo curto (v ≈ Δs/Δt e a ≈ Δv/Δt)
+ * e guarda tudo no histórico.
  */
 
 const SUB = 2;   // passos de física por quadro: 2 × 1/120 s = 1/60 s
@@ -23,7 +24,7 @@ let ultimaJogada = null;   // { indiceFase, hist, relatorio } da última jogada 
 let referencia = null;     // jogada anterior que a atual está comparando (ou null)
 
 function novoEstado() {
-  const a0 = aceleracao(0, fase.v0, 0, fase);
+  const a0 = aceleracao(0, 0, fase);
   return {
     t: 0, s: 0, v: fase.v0, a: a0, p: 0, rodando: false, fim: false,
     hist: [{ t: 0, s: 0, v: fase.v0, a: a0, p: 0, vD: fase.v0, aD: a0 }]
@@ -37,10 +38,10 @@ function quadro() {
     for (let k = 0; k < SUB && !est.fim; k++) {
       Object.assign(est, passo(est, segurando, fase, DT));
     }
-    // mede as derivadas a partir dos valores registrados
+    // mede as derivadas a partir dos valores registrados (Δt = 1/60 s, bem pequeno)
     const ant = est.hist[est.hist.length - 1];
-    const vD = derivadaNoTempo(est.s, ant.s, est.t - ant.t);    // v ≈ Δs/Δt
-    const aD = derivadaNoTempo(vD, ant.vD, est.t - ant.t);      // a ≈ Δv/Δt
+    const vD = taxaDeVariacaoMedia(ant.s, est.s, ant.t, est.t);    // v ≈ Δs/Δt
+    const aD = taxaDeVariacaoMedia(ant.vD, vD, ant.t, est.t);      // a ≈ Δv/Δt
     est.hist.push({ t: est.t, s: est.s, v: est.v, a: est.a, p: est.p, vD, aD });
     if (est.fim) terminar(false);
     else if (est.s > fase.D + LIMITE_AVANCO) terminar(true);

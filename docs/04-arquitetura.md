@@ -26,42 +26,36 @@ Os arquivos compartilham funções como variáveis globais simples, carregados n
 Somente funções puras e constantes, cada uma com a fórmula comentada:
 
 ```js
-derivada(f, x)                         // f′(x) ≈ [f(x + ε) − f(x − ε)] / 2ε
-derivadaNoTempo(atual, anterior, dt)   // (atual − anterior) / Δt
+taxaDeVariacaoMedia(y1, y2, x1, x2)    // Δy/Δx = [f(x₂) − f(x₁)] / (x₂ − x₁)
+derivada(f, x)                         // f′(x) ≈ [f(x + Δx) − f(x)] / Δx, Δx = DX
 inclinacaoDaPista(h, s)                // h′(s)
-componenteDaGravidade(h, s)            // −G · h′(s) / √(1 + h′(s)²)
-aceleracao(s, v, p, fase)              // soma de freio, ar, rolagem e gravidade
+aceleracao(s, p, fase)                 // −FREIO_MAX · μ · p − G · h′(s)
 atualizarPedal(p, segurando, dt)       // p ± velocidade · Δt, entre 0 e 1
-passo(estado, segurando, fase, dt)     // pedal → a → v → s → t (ordem do doc 02)
-taxaDeVariacaoMedia(f0, f1, t0, t1)    // [f(t1) − f(t0)] / (t1 − t0)
-integralTrapezios(ts, ys)              // Σ [f(tᵢ) + f(tᵢ₊₁)] / 2 · Δt
-instantesOndeCruza(ts, ys, alvo)       // interpolação linear onde f passa pelo alvo
+passo(estado, segurando, fase, dt)     // pedal → a → s → v → t (ordem do doc 02)
 ```
 
 ## `js/principal.js` — laço de animação
 
 A cada quadro (`requestAnimationFrame`): 2 chamadas de `passo` com `DT = 1/120`; depois mede
-`v ≈ Δs/Δt` e `a ≈ Δv/Δt` com `derivadaNoTempo` e guarda no histórico `{t, s, v, a, p, vD, aD}`;
+`v ≈ Δs/Δt` e `a ≈ Δv/Δt` com `taxaDeVariacaoMedia` e guarda no histórico `{t, s, v, a, p, vD, aD}`;
 confere fim de fase; desenha.
 
 ## `js/relatorio.js`
 
-`montarRelatorio(hist, fase, resultado)` usa as três funções de análise de `fisica.js` sobre o
-histórico (velocidade média, Valor Médio, área sob v(t), ponto crítico, concavidade) e
+`montarRelatorio(hist, fase, resultado)` calcula os números da jogada a partir do histórico
+(usando `taxaDeVariacaoMedia` para a velocidade média e a desaceleração média) e
 `mostrarRelatorio(relatorio, anterior)` escreve o cartão; com `anterior` mostra a comparação.
 
 ## Testes (`node tests/fisica.test.js`)
 
 | Teste | Esperado |
 |---|---|
-| `derivada(x => x*x, 3)` | ≈ 6 |
-| `derivadaNoTempo(10, 4, 2)` | 3 |
-| `componenteDaGravidade(s => 0, 10)` | 0 |
-| `componenteDaGravidade(s => -s, 0)` (descida de 45°) | ≈ +6,93 |
-| `aceleracao` sem freio, plano, v = 10 | ≈ −0,4 |
-| simulação da fase 1 freando a partir de t = 3,77 s até parar | para a menos de 0,25 m da faixa |
-| simulação de cada fase sem frear | passa da faixa |
 | `taxaDeVariacaoMedia(0, 50, 0, 5)` | 10 |
-| `integralTrapezios` de 2t em [0, 3] / de t² em [0, 1] | 9 / ≈ 1/3 |
-| `instantesOndeCruza` em 3, 1, −1 e em sen(t) | t = 1,5 / π e 2π |
-| fase 1: área sob v(t) − distância | exatamente (v₀ − v_final)·Δt/2 |
+| `derivada(x => x*x, 3)` | ≈ 6 |
+| `derivada` da ladeira da fase 3 | ≈ −4·(π/60)·sen(π·s/60) (regra da cadeia) |
+| `aceleracao` no plano: sem freio / freio no fundo | 0 / −8 (seco) e −4 (molhado) |
+| `aceleracao` na ladeira sem freio | −G·h′(s): positiva na descida, negativa na subida |
+| `atualizarPedal` | sobe 2,5/s, desce 5/s, entre 0 e 1 |
+| `passo` | s + v·Δt, v + a·Δt; para quando v chega a 0 |
+| simulação da fase 1 freando a partir de t = 3,22 s até parar | para a menos de 0,25 m da faixa |
+| simulação de cada fase sem frear | passa da faixa |

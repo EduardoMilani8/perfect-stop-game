@@ -25,16 +25,26 @@ function simular(fase, tFreio) {
   return estado;
 }
 
-console.log("Derivadas");
-teste("derivada(x², 3) ≈ 6", () => perto(F.derivada(x => x * x, 3), 6, 1e-6));
-teste("derivadaNoTempo(10, 4, 2) = 3", () => assert.strictEqual(F.derivadaNoTempo(10, 4, 2), 3));
+console.log("Taxa de variação e derivada");
+teste("taxa de variação média de 0 a 50 m em 5 s = 10", () =>
+  assert.strictEqual(F.taxaDeVariacaoMedia(0, 50, 0, 5), 10));
+teste("derivada pela definição: (x²)′ em 3 ≈ 6", () => perto(F.derivada(x => x * x, 3), 6, 0.01));
+teste("derivada da ladeira ≈ regra da cadeia: h′(s) = −4·(π/60)·sen(π·s/60)", () => {
+  [10, 30, 50, 90].forEach(s =>
+    perto(F.derivada(FASES[2].h, s), -4 * (Math.PI / 60) * Math.sin(Math.PI * s / 60), 1e-3, `s = ${s}:`));
+});
 
-console.log("Forças");
-teste("pista plana: gravidade = 0", () => perto(F.componenteDaGravidade(s => 0, 10), 0, 1e-12));
-teste("descida de 45°: gravidade ≈ +6,93", () =>
-  perto(F.componenteDaGravidade(s => -s, 0), 9.8 / Math.SQRT2, 1e-6));
-teste("sem freio, plano, v = 10: a ≈ −0,4", () =>
-  perto(F.aceleracao(0, 10, 0, FASES[0]), -0.4, 1e-9));
+console.log("Aceleração");
+teste("plano, sem freio: a = 0", () => perto(F.aceleracao(10, 0, FASES[0]), 0, 1e-12));
+teste("plano, freio no fundo: a = −8 (seco) e −4 (molhado)", () => {
+  assert.strictEqual(F.aceleracao(10, 1, FASES[0]), -8);
+  assert.strictEqual(F.aceleracao(10, 1, FASES[1]), -4);
+});
+teste("ladeira, sem freio: a = −G·h′(s) (desce → positiva, sobe → negativa)", () => {
+  perto(F.aceleracao(30, 0, FASES[2]), -F.G * F.derivada(FASES[2].h, 30), 1e-12);
+  assert.ok(F.aceleracao(30, 0, FASES[2]) > 0, "na descida o carro acelera");
+  assert.ok(F.aceleracao(90, 0, FASES[2]) < 0, "na subida o carro perde velocidade");
+});
 
 console.log("Pedal");
 teste("pedal afunda 2,5/s e para em 1", () => {
@@ -53,15 +63,14 @@ teste("passo não altera o estado recebido", () => {
   F.passo(antes, true, FASES[0], F.DT);
   assert.deepStrictEqual(antes, copia);
 });
-teste("passo segue a ordem pedal → a → v → s → t", () => {
+teste("passo: s(t+Δt) = s + v·Δt e v(t+Δt) = v + a·Δt", () => {
   const e = F.passo({ t: 0, s: 0, v: 12, a: 0, p: 0, fim: false }, true, FASES[0], F.DT);
   const p = F.PEDAL_SOBE * F.DT;
-  const a = F.aceleracao(0, 12, p, FASES[0]);
-  const v = 12 + a * F.DT;
+  const a = F.aceleracao(0, p, FASES[0]);
   perto(e.p, p, 1e-12, "p:");
   perto(e.a, a, 1e-12, "a:");
-  perto(e.v, v, 1e-12, "v:");
-  perto(e.s, v * F.DT, 1e-12, "s:");
+  perto(e.s, 12 * F.DT, 1e-12, "s:");
+  perto(e.v, 12 + a * F.DT, 1e-12, "v:");
   perto(e.t, F.DT, 1e-12, "t:");
   assert.strictEqual(e.fim, false);
 });
@@ -69,12 +78,12 @@ teste("quando v chega a 0, o carro para (v = 0, fim)", () => {
   const e = F.passo({ t: 5, s: 40, v: 0.01, a: 0, p: 1, fim: false }, true, FASES[0], F.DT);
   assert.strictEqual(e.v, 0);
   assert.strictEqual(e.fim, true);
-  assert.strictEqual(e.s, 40);
+  perto(e.s, 40 + 0.01 * F.DT, 1e-12, "s:");
 });
 
 console.log("Simulação das fases");
-teste("fase 1 freando a partir de t = 3,77 s para a menos de 0,25 m da faixa", () => {
-  const fim = simular(FASES[0], 3.77);
+teste("fase 1 freando a partir de t = 3,22 s para a menos de 0,25 m da faixa", () => {
+  const fim = simular(FASES[0], 3.22);
   assert.ok(fim.fim, "o carro deveria ter parado");
   perto(fim.s, FASES[0].D, 0.25, "posição final:");
 });
@@ -83,37 +92,6 @@ FASES.forEach((fase, i) => {
     const fim = simular(fase, Infinity);
     assert.ok(fim.s > fase.D, `parou em ${fim.s.toFixed(2)} m`);
   });
-});
-
-console.log("Análise da jogada");
-teste("taxa de variação média de 0 a 50 m em 5 s = 10", () =>
-  assert.strictEqual(F.taxaDeVariacaoMedia(0, 50, 0, 5), 10));
-teste("trapézios: ∫ 2t dt de 0 a 3 = 9 (exato para reta)", () => {
-  const ts = [0, 0.5, 1, 1.5, 2, 2.5, 3];
-  perto(F.integralTrapezios(ts, ts.map(t => 2 * t)), 9, 1e-12);
-});
-teste("trapézios: ∫ t² dt de 0 a 1 ≈ 1/3 com 1000 pedaços", () => {
-  const ts = Array.from({ length: 1001 }, (_, i) => i / 1000);
-  perto(F.integralTrapezios(ts, ts.map(t => t * t)), 1 / 3, 1e-6);
-});
-teste("cruzamento: 3, 1, −1 passa por 0 em t = 1,5 descendo", () => {
-  assert.deepStrictEqual(F.instantesOndeCruza([0, 1, 2], [3, 1, -1], 0), [{ t: 1.5, sobe: false }]);
-});
-teste("cruzamento: sen(t) em [0,1; 7] passa por 0 em π (desce) e 2π (sobe)", () => {
-  const ts = Array.from({ length: 690 }, (_, i) => 0.1 + i * 0.01);
-  const c = F.instantesOndeCruza(ts, ts.map(Math.sin), 0);
-  assert.strictEqual(c.length, 2);
-  perto(c[0].t, Math.PI, 1e-4); assert.strictEqual(c[0].sobe, false);
-  perto(c[1].t, 2 * Math.PI, 1e-4); assert.strictEqual(c[1].sobe, true);
-});
-teste("fase 1: a área sob v(t) é a distância percorrida", () => {
-  const fase = FASES[0];
-  let e = { t: 0, s: 0, v: fase.v0, a: 0, p: 0, fim: false };
-  const ts = [0], vs = [fase.v0];
-  while (!e.fim) { e = F.passo(e, e.t >= 3.77, fase, F.DT); ts.push(e.t); vs.push(e.v); }
-  // passo() soma s += v(t + Δt)·Δt (soma de Riemann pela direita); os trapézios dão a média
-  // entre as somas pela esquerda e pela direita, então a diferença é exatamente (v₀ − v_final)·Δt/2
-  perto(F.integralTrapezios(ts, vs) - e.s, (fase.v0 - e.v) * F.DT / 2, 1e-9, "área − s:");
 });
 
 console.log(falhas ?`\n${falhas} teste(s) falharam.` : "\nTodos os testes passaram.");

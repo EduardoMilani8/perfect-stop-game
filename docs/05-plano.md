@@ -19,12 +19,15 @@ Siga em ordem. Um commit ao final de cada etapa.
 - [ ] GitHub Pages ativo e link no `README.md`.
 - [ ] Pedir ao usuário os nomes do grupo para o `README.md`.
 
+## Etapa 4 — Física mais próxima das aulas (23/11)
+- [x] Aceleração só com freio e ladeira; derivada pela definição; passo explicado pela diferencial.
+- [x] Relatório só com conteúdos da disciplina (sem integral, Valor Médio e concavidade).
+
 ## Prazos
 
 | Até | O quê |
 |---|---|
 | 20/11 | Etapas 0 a 3 |
-| 25/11 | Slides (feitos fora deste repositório) |
-| 26–30/11 | Ensaio com o grupo |
-| **01/12** | Envio no Moodle (arquivos + link da apresentação) |
-| **02/12** | Seminário |
+| 23/11 | Slides (feitos fora deste repositório) |
+| **24/11, 23h59** | Envio no Moodle (arquivos + link ou PDF da apresentação) |
+| **25/11** | Seminário |
