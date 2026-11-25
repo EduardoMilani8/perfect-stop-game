@@ -1,10 +1,4 @@
-/*
- * relatorio.js — relatório de uma jogada, mostrado quando o carro para.
- *
- * montarRelatorio() junta os números a partir do histórico { t, s, v, a, p, vD, aD }
- * usando a taxa de variação média de fisica.js.
- * mostrarRelatorio() escreve o cartão na tela. Sem equações: só números e frases.
- */
+// relatorio.js — relatório de uma jogada, mostrado quando o carro para.
 
 /* ---------- Números da jogada ---------- */
 
@@ -13,8 +7,6 @@ function montarRelatorio(hist, fase, resultado) {
   const fim = hist[hist.length - 1];
   const r = { fase, tTotal: fim.t, sTotal: fim.s, erro: resultado.erro, avancou: resultado.avancou };
 
-  // freada: do instante em que o pedal começou a descer até o fim
-  // (a primeira amostra com pedal > 0 é o fim do quadro em que ele começou; a anterior é o início)
   const iFreio = hist.findIndex(p => p.p > 0);
   if (iFreio >= 0) {
     const ini = hist[Math.max(0, iFreio - 1)];
@@ -27,22 +19,17 @@ function montarRelatorio(hist, fase, resultado) {
   r.desacelMax = -Math.min(...as);
   r.acelMax = Math.max(...as);
 
-  // velocidade média: taxa de variação média da posição em toda a jogada
   r.vMedia = taxaDeVariacaoMedia(0, fim.s, 0, fim.t);
 
-  // velocidade máxima e o instante em que ela aconteceu
   let iMax = 0;
   vs.forEach((v, i) => { if (v > vs[iMax]) iMax = i; });
   r.vMax = vs[iMax]; r.tVMax = ts[iMax];
 
-  // precisão da derivada numérica: Δs/Δt medido × velocidade da simulação
   r.erroDerivada = Math.max(...hist.slice(1).map(p => Math.abs(p.vD - p.v)));
   return r;
 }
 
 /* ---------- Linhas do cartão ---------- */
-// Cada linha: { chave, grupo, rotulo, texto, num, unidade, nota }.
-// num é o valor usado para comparar com a jogada anterior (null = não compara).
 
 function linhasDoRelatorio(r) {
   const L = [];
@@ -74,7 +61,6 @@ function linhasDoRelatorio(r) {
 
 /* ---------- Cartão na tela ---------- */
 
-// anterior: relatório da jogada anterior, para comparar (ou null)
 function mostrarRelatorio(r, anterior) {
   const cartao = $("relatorio");
   cartao.hidden = !r;
@@ -82,7 +68,7 @@ function mostrarRelatorio(r, anterior) {
   const linhas = linhasDoRelatorio(r);
   const antes = anterior ? linhasDoRelatorio(anterior) : null;
   const grupos = [...new Set(linhas.map(l => l.grupo))];
-  $("relatorio-corpo").classList.toggle("comparando", !!antes);   // comparando: um grupo por linha
+  $("relatorio-corpo").classList.toggle("comparando", !!antes);
 
   $("relatorio-corpo").innerHTML = grupos.map(g => {
     const doGrupo = linhas.filter(l => l.grupo === g);
@@ -96,7 +82,7 @@ function mostrarRelatorio(r, anterior) {
         let txtDif = "";
         if (dif != null) {
           const n = fmt(Math.abs(dif));
-          const sinal = n === fmt(0) ? "" : dif > 0 ? "+" : "−";   // sem sinal quando arredonda para zero
+          const sinal = n === fmt(0) ? "" : dif > 0 ? "+" : "−";
           txtDif = `${sinal}${n} ${l.unidade}`;
         }
         extra = `<td class="ant">${a ? a.texto : "—"}</td><td class="dif">${txtDif}</td>`;

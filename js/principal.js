@@ -1,27 +1,20 @@
-/*
- * principal.js — estado do jogo, botões, teclado e laço de animação.
- *
- * A cada quadro (1/60 s) chama passo() de fisica.js duas vezes (Δt = 1/120 s),
- * mede as derivadas pela taxa de variação num intervalo curto (v ≈ Δs/Δt e a ≈ Δv/Δt)
- * e guarda tudo no histórico.
- */
+// principal.js — estado do jogo, botões, teclado e laço de animação.
 
-const SUB = 2;   // passos de física por quadro: 2 × 1/120 s = 1/60 s
+const SUB = 2;
 
 /* ---------- Estado ---------- */
 
 let indiceFase = 0;
 let fase = FASES[0];
-let est = null;          // { t, s, v, a, p, rodando, fim, hist }
-let segurando = false;   // o jogador está segurando o freio?
-let inspecao = null;     // instante escolhido com o mouse nos gráficos (ou null = ao vivo)
-let resultado = null;    // { ok, avancou, txt, erro } depois que o carro para
-let relatorio = null;    // números da jogada que acabou (relatorio.js)
+let est = null;
+let segurando = false;
+let inspecao = null;
+let resultado = null;
+let relatorio = null;
 
-// Comparação com a jogada anterior
-let comparar = false;      // a caixa "comparar a próxima jogada com esta" está marcada?
-let ultimaJogada = null;   // { indiceFase, hist, relatorio } da última jogada terminada
-let referencia = null;     // jogada anterior que a atual está comparando (ou null)
+let comparar = false;
+let ultimaJogada = null;
+let referencia = null;
 
 function novoEstado() {
   const a0 = aceleracao(0, 0, fase);
@@ -38,10 +31,9 @@ function quadro() {
     for (let k = 0; k < SUB && !est.fim; k++) {
       Object.assign(est, passo(est, segurando, fase, DT));
     }
-    // mede as derivadas a partir dos valores registrados (Δt = 1/60 s, bem pequeno)
     const ant = est.hist[est.hist.length - 1];
-    const vD = taxaDeVariacaoMedia(ant.s, est.s, ant.t, est.t);    // v ≈ Δs/Δt
-    const aD = taxaDeVariacaoMedia(ant.vD, vD, ant.t, est.t);      // a ≈ Δv/Δt
+    const vD = taxaDeVariacaoMedia(ant.s, est.s, ant.t, est.t);
+    const aD = taxaDeVariacaoMedia(ant.vD, vD, ant.t, est.t);
     est.hist.push({ t: est.t, s: est.s, v: est.v, a: est.a, p: est.p, vD, aD });
     if (est.fim) terminar(false);
     else if (est.s > fase.D + LIMITE_AVANCO) terminar(true);
@@ -54,7 +46,7 @@ function quadro() {
 
 function terminar(avancou) {
   est.rodando = false; est.fim = true;
-  const erro = est.s - fase.D;   // positivo = passou da faixa
+  const erro = est.s - fase.D;
   if (avancou) {
     resultado = { ok: false, avancou: true, txt: "Avançou o sinal" };
   } else {
@@ -93,7 +85,6 @@ function reiniciar() {
 function largar() {
   if (est.rodando) return;
   if (est.fim) reiniciar();
-  // compara só com uma jogada da mesma fase
   referencia = comparar && ultimaJogada && ultimaJogada.indiceFase === indiceFase ? ultimaJogada : null;
   est.rodando = true; inspecao = null; atualizarBotoes();
 }
@@ -122,9 +113,7 @@ botaoFreio.addEventListener("pointerdown", e => {
 
 document.addEventListener("keydown", e => {
   if (e.code === "Space" || e.code === "ArrowDown") { e.preventDefault(); segurando = true; }
-  // Enter: largar / de novo (menos quando o foco está num botão de fase, para escolher a fase)
   if (e.code === "Enter" && !e.repeat && !document.activeElement?.closest("#fases")) { e.preventDefault(); largar(); }
-  // R: reiniciar (Ctrl+R / Cmd+R continuam recarregando a página)
   if (e.code === "KeyR" && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) reiniciar();
 });
 document.addEventListener("keyup", e => {
